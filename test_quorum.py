@@ -67,7 +67,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await the_node.take_down()
         await the_node.bring_back_up()
 
-        assert cluster.take_me_to_a_leader() == the_node
+        assert cluster.take_me_to_a_leader() == the_node, str(cluster.take_me_to_a_leader())
 
     async def test_up_is_idempotent(self) -> None:
         the_node = Node(initial_role=Leader())

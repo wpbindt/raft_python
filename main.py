@@ -25,25 +25,35 @@ class Role(ABC):
     def heartbeat(self) -> HeartbeatResponse:
         pass
 
+    @abstractmethod
+    def stop_running(self) -> None:
+        pass
+
 
 @dataclass(frozen=True)
 class NoLeaderInCluster:
     pass
 
 
-@dataclass(frozen=True)
 class Leader(Role):
+    def __init__(self):
+        self._stopped = False
+
     async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
-        while True:
+        while not self._stopped:
             await asyncio.sleep(heartbeat_period.total_seconds())
-            for node in other_nodes:
-                node.heartbeat()
+            if not self._stopped:
+                for node in other_nodes:
+                    node.heartbeat()
 
     def set_node(self, node: Node) -> None:
         pass
 
     def heartbeat(self) -> HeartbeatResponse:
         pass
+
+    def stop_running(self) -> None:
+        self._stopped = True
 
 
 @dataclass(frozen=True)
@@ -55,6 +65,9 @@ class Candidate(Role):
         pass
 
     def heartbeat(self) -> HeartbeatResponse:
+        pass
+
+    def stop_running(self) -> None:
         pass
 
 
@@ -74,6 +87,9 @@ class Subject(Role):
     def heartbeat(self) -> HeartbeatResponse:
         self.beaten = True
 
+    def stop_running(self) -> None:
+        pass
+
 
 @dataclass(frozen=True)
 class Down(Role):
@@ -86,6 +102,9 @@ class Down(Role):
         pass
 
     def heartbeat(self) -> HeartbeatResponse:
+        pass
+
+    def stop_running(self) -> None:
         pass
 
 
@@ -107,6 +126,7 @@ class Node:
         return self._role
 
     def change_role(self, new_role: Role) -> None:
+        self._role.stop_running()
         self._role = new_role
 
     async def take_down(self) -> None:
@@ -118,11 +138,12 @@ class Node:
             self.change_role(self._role.previous_role)
 
     async def run(self, election_timeout: ElectionTimeout, heartbeat_period: timedelta) -> None:
-        await self._role.run(
-            election_timeout=election_timeout,
-            other_nodes=self._other_nodes,
-            heartbeat_period=heartbeat_period,
-        )
+        while True:
+            await self._role.run(
+                election_timeout=election_timeout,
+                other_nodes=self._other_nodes,
+                heartbeat_period=heartbeat_period,
+            )
 
     def heartbeat(self) -> HeartbeatResponse:
         self._role.heartbeat()
@@ -159,7 +180,7 @@ class Cluster:
         self._heartbeat_period = heartbeat_period
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
-        current_leaders = {node for node in self._nodes if node.role == Leader()}
+        current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
         if len(current_leaders) == 0:
             return NoLeaderInCluster()
         if len(current_leaders) > 1:
