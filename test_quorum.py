@@ -1,6 +1,8 @@
+import asyncio
 import unittest
+from datetime import timedelta
 
-from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders
+from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -75,3 +77,15 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await the_node.bring_back_up()
 
         assert cluster.take_me_to_a_leader() == the_node
+
+    async def test_non_leader_nodes_announce_candidacy_after_election_timeout_passes(self) -> None:
+        the_node = Node(initial_role=Subject())
+        cluster = Cluster(
+            nodes={the_node},
+            election_timeout=timedelta(seconds=0.1),
+        )
+        asyncio.create_task(cluster.run())
+
+        await asyncio.sleep(0.2)
+
+        assert the_node.role == Candidate()

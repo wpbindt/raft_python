@@ -1,5 +1,10 @@
 from __future__ import annotations
+
+import asyncio
+import math
 from dataclasses import dataclass
+from datetime import timedelta
+from typing import NoReturn
 
 
 @dataclass(frozen=True)
@@ -13,16 +18,22 @@ class Leader:
 
 
 @dataclass(frozen=True)
+class Candidate:
+    pass
+
+
+@dataclass(frozen=True)
 class Subject:
     pass
 
 
 @dataclass(frozen=True)
 class Down:
-    previous_role: Leader | Subject
+    previous_role: UpRole
 
 
-Role = Leader | Subject | Down
+UpRole = Leader | Subject | Candidate
+Role = UpRole | Down
 
 
 class Node:
@@ -43,8 +54,13 @@ class Node:
 
 
 class Cluster:
-    def __init__(self, nodes: set[Node]) -> None:
+    def __init__(
+        self,
+        nodes: set[Node],
+        election_timeout: timedelta = timedelta(days=1),
+    ) -> None:
         self._nodes = nodes
+        self._election_timeout = election_timeout
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if node.role == Leader()}
@@ -53,6 +69,12 @@ class Cluster:
         if len(current_leaders) > 1:
             raise TooManyLeaders
         return next(iter(current_leaders))
+
+    async def run(self) -> NoReturn:
+        await asyncio.sleep(self._election_timeout.total_seconds())
+        for node in self._nodes:
+            node._role = Candidate()
+        await asyncio.sleep(math.inf)
 
 
 class TooManyLeaders(Exception):
