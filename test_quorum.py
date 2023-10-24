@@ -1,8 +1,9 @@
 import asyncio
 import unittest
 from datetime import timedelta
+from itertools import cycle
 
-from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate
+from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate, ElectionTimeout
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -82,7 +83,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         the_node = Node(initial_role=Subject())
         cluster = Cluster(
             nodes={the_node},
-            election_timeout=timedelta(seconds=0.02),
+            election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
         )
         asyncio.create_task(cluster.run())
 
@@ -94,10 +95,41 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         the_node = Node(initial_role=Leader())
         cluster = Cluster(
             nodes={the_node},
-            election_timeout=timedelta(seconds=0.02),
+            election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
         )
         asyncio.create_task(cluster.run())
 
         await asyncio.sleep(0.05)
 
         assert cluster.take_me_to_a_leader() == the_node
+
+    async def test_candidacy_is_announced_in_random_way(self) -> None:
+        the_node = Node(initial_role=Subject())
+        cluster = Cluster(
+            nodes={the_node},
+            election_timeout=ElectionTimeout(
+                max_timeout=timedelta(seconds=0.2),
+                randomization=(cycle((0.1,)))
+            ),
+        )
+        asyncio.create_task(cluster.run())
+
+        await asyncio.sleep(0.03)
+
+        assert the_node.role == Candidate()
+
+    async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
+        the_node = Node(initial_role=Subject())
+        cluster = Cluster(
+            nodes={the_node},
+            election_timeout=ElectionTimeout(
+                max_timeout=timedelta(seconds=0.33),
+                min_timeout=timedelta(seconds=0.33),
+                randomization=(cycle((0.1,)))
+            ),
+        )
+        asyncio.create_task(cluster.run())
+
+        await asyncio.sleep(0.01)
+
+        assert isinstance(the_node.role, Subject)
