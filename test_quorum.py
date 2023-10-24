@@ -133,3 +133,17 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.01)
 
         assert isinstance(the_node.role, Subject)
+
+    async def test_live_leaders_prevent_elections(self) -> None:
+        subject = Node(initial_role=Subject())
+        leader = Node(initial_role=Leader())
+        cluster = Cluster(
+            nodes={leader, subject},
+            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.05)),
+            heartbeat_period=timedelta(seconds=0.01),
+        )
+        asyncio.create_task(cluster.run())
+
+        await asyncio.sleep(0.1)
+
+        assert subject.role != Candidate()

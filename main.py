@@ -9,14 +9,20 @@ from itertools import count
 from random import random
 from typing import Iterable
 
+HeartbeatResponse = None
+
 
 class Role(ABC):
     @abstractmethod
-    async def run(self, election_timeout: ElectionTimeout) -> None:
+    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
         pass
 
     @abstractmethod
     def set_node(self, node: Node) -> None:
+        pass
+
+    @abstractmethod
+    def heartbeat(self) -> HeartbeatResponse:
         pass
 
 
@@ -27,42 +33,59 @@ class NoLeaderInCluster:
 
 @dataclass(frozen=True)
 class Leader(Role):
-    async def run(self, election_timeout: ElectionTimeout) -> None:
-        await asyncio.sleep(math.inf)
+    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
+        while True:
+            await asyncio.sleep(heartbeat_period.total_seconds())
+            for node in other_nodes:
+                node.heartbeat()
 
     def set_node(self, node: Node) -> None:
+        pass
+
+    def heartbeat(self) -> HeartbeatResponse:
         pass
 
 
 @dataclass(frozen=True)
 class Candidate(Role):
-    async def run(self, election_timeout: ElectionTimeout) -> None:
+    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
+        pass
+
+    def heartbeat(self) -> HeartbeatResponse:
         pass
 
 
 @dataclass
 class Subject(Role):
     node: Node | None = None
+    beaten: bool = False
 
-    async def run(self, election_timeout: ElectionTimeout) -> None:
+    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
         await election_timeout.wait()
-        self.node.change_role(Candidate())
+        if not self.beaten:
+            self.node.change_role(Candidate())
 
     def set_node(self, node: Node) -> None:
         self.node = node
+
+    def heartbeat(self) -> HeartbeatResponse:
+        self.beaten = True
 
 
 @dataclass(frozen=True)
 class Down(Role):
     previous_role: UpRole
 
-    async def run(self, election_timeout: ElectionTimeout) -> None:
+    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
+        pass
+
+    def heartbeat(self) -> HeartbeatResponse:
         pass
 
 
@@ -73,6 +96,11 @@ class Node:
     def __init__(self, initial_role: Role = Leader()) -> None:
         self._role = initial_role
         self._role.set_node(self)
+        self._other_nodes: set[Node] = set()
+
+    def register_node(self, node: Node) -> None:
+        if node != self:
+            self._other_nodes.add(node)
 
     @property
     def role(self) -> Role:
@@ -89,8 +117,15 @@ class Node:
         if isinstance(self._role, Down):
             self._role = self._role.previous_role
 
-    async def run(self, election_timeout: ElectionTimeout) -> None:
-        await self._role.run(election_timeout)
+    async def run(self, election_timeout: ElectionTimeout, heartbeat_period: timedelta) -> None:
+        await self._role.run(
+            election_timeout=election_timeout,
+            other_nodes=self._other_nodes,
+            heartbeat_period=heartbeat_period,
+        )
+
+    def heartbeat(self) -> HeartbeatResponse:
+        self._role.heartbeat()
 
 
 class ElectionTimeout:
@@ -114,9 +149,14 @@ class Cluster:
         self,
         nodes: set[Node],
         election_timeout: ElectionTimeout = ElectionTimeout(timedelta(days=1)),
+        heartbeat_period: timedelta = timedelta(days=1),
     ) -> None:
         self._nodes = nodes
+        for node in self._nodes:
+            for other_node in self._nodes:
+                node.register_node(other_node)
         self._election_timeout = election_timeout
+        self._heartbeat_period = heartbeat_period
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if node.role == Leader()}
@@ -127,7 +167,7 @@ class Cluster:
         return next(iter(current_leaders))
 
     async def run(self) -> None:
-        await asyncio.gather(*[node.run(self._election_timeout) for node in self._nodes])
+        await asyncio.gather(*[node.run(self._election_timeout, self._heartbeat_period) for node in self._nodes])
 
 
 class TooManyLeaders(Exception):
