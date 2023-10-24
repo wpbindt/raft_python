@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 
 
@@ -18,7 +19,7 @@ class Subject:
 
 @dataclass(frozen=True)
 class Down:
-    pass
+    previous_role: Leader | Subject
 
 
 Role = Leader | Subject | Down
@@ -33,10 +34,12 @@ class Node:
         return self._role
 
     async def take_down(self) -> None:
-        self._role = Down()
+        if not isinstance(self._role, Down):
+            self._role = Down(self._role)
 
     async def bring_back_up(self) -> None:
-        self._role = Leader()
+        if isinstance(self._role, Down):
+            self._role = self._role.previous_role
 
 
 class Cluster:
