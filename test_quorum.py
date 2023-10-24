@@ -82,11 +82,11 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         the_node = Node(initial_role=Subject())
         cluster = Cluster(
             nodes={the_node},
-            election_timeout=timedelta(seconds=0.1),
+            election_timeout=timedelta(seconds=0.02),
         )
         asyncio.create_task(cluster.run())
 
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.05)
 
         assert the_node.role == Candidate()
 
@@ -94,10 +94,10 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         the_node = Node(initial_role=Leader())
         cluster = Cluster(
             nodes={the_node},
-            election_timeout=timedelta(seconds=0.1),
+            election_timeout=timedelta(seconds=0.02),
         )
         asyncio.create_task(cluster.run())
 
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.05)
 
         assert cluster.take_me_to_a_leader() == the_node
