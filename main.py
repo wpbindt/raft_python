@@ -36,7 +36,7 @@ class Node:
         self._role = Down()
 
     async def bring_back_up(self) -> None:
-        pass
+        self._role = Leader()
 
 
 class Cluster:

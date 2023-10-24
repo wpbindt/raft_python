@@ -37,3 +37,12 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await the_node.take_down()
 
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
+
+    async def test_down_then_back_up_means_leader_back(self) -> None:
+        the_node = Node(initial_role=Leader())
+        cluster = Cluster({the_node})
+
+        await the_node.take_down()
+        await the_node.bring_back_up()
+
+        assert cluster.take_me_to_a_leader() == the_node
