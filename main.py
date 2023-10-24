@@ -111,11 +111,11 @@ class Node:
 
     async def take_down(self) -> None:
         if isinstance(self._role, (Leader, Subject, Candidate)):
-            self._role = Down(self._role)
+            self.change_role(Down(self._role))
 
     async def bring_back_up(self) -> None:
         if isinstance(self._role, Down):
-            self._role = self._role.previous_role
+            self.change_role(self._role.previous_role)
 
     async def run(self, election_timeout: ElectionTimeout, heartbeat_period: timedelta) -> None:
         await self._role.run(

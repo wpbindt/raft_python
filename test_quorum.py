@@ -139,7 +139,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         leader = Node(initial_role=Leader())
         cluster = Cluster(
             nodes={leader, subject},
-            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.05)),
+            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.05), min_timeout=timedelta(seconds=0.05)),
             heartbeat_period=timedelta(seconds=0.01),
         )
         asyncio.create_task(cluster.run())
@@ -147,3 +147,21 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.1)
 
         assert subject.role != Candidate()
+
+    async def test_down_leaders_do_not_prevent_elections(self) -> None:
+        subject = Node(initial_role=Subject())
+        leader = Node(initial_role=Leader())
+        heartbeat = timedelta(seconds=0.03)
+        candidacy_timeout = timedelta(seconds=0.05)
+        cluster = Cluster(
+            nodes={leader, subject},
+            election_timeout=ElectionTimeout(max_timeout=candidacy_timeout, min_timeout=candidacy_timeout),
+            heartbeat_period=timedelta(seconds=0.05),
+        )
+        asyncio.create_task(cluster.run())
+        await asyncio.sleep(0.5 * heartbeat.total_seconds())
+        await leader.take_down()
+
+        await asyncio.sleep(candidacy_timeout.total_seconds())
+
+        assert subject.role == Candidate()
