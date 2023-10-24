@@ -89,3 +89,15 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.2)
 
         assert the_node.role == Candidate()
+
+    async def test_leader_nodes_do_not_become_candidates(self) -> None:
+        the_node = Node(initial_role=Leader())
+        cluster = Cluster(
+            nodes={the_node},
+            election_timeout=timedelta(seconds=0.1),
+        )
+        asyncio.create_task(cluster.run())
+
+        await asyncio.sleep(0.2)
+
+        assert cluster.take_me_to_a_leader() == the_node
