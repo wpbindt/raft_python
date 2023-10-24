@@ -15,4 +15,6 @@ class Cluster:
         self._nodes = nodes
 
     def take_me_to_a_leader(self) -> Node | NoLeader:
+        if len(self._nodes) > 0:
+            return next(iter(self._nodes))
         return NoLeader()
