@@ -1,6 +1,6 @@
 import unittest
 
-from main import Cluster, NoLeaderInCluster, Node, Subject, Leader
+from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -21,3 +21,11 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         cluster = Cluster({leader, follower})
 
         assert cluster.take_me_to_a_leader() == leader
+
+    async def test_two_nodes_multiple_leaders(self) -> None:
+        leader = Node(initial_role=Leader())
+        follower = Node(initial_role=Leader())
+        cluster = Cluster({leader, follower})
+
+        with self.assertRaises(TooManyLeaders):
+            assert cluster.take_me_to_a_leader()

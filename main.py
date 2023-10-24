@@ -32,11 +32,14 @@ class Cluster:
     def __init__(self, nodes: set[Node]) -> None:
         self._nodes = nodes
 
-    @property
-    def _leaders(self) -> set[Node]:
-        return {node for node in self._nodes if node.role == Leader()}
-
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
-        if len(self._leaders) > 0:
-            return next(iter(self._leaders))
-        return NoLeaderInCluster()
+        current_leaders = {node for node in self._nodes if node.role == Leader()}
+        if len(current_leaders) == 0:
+            return NoLeaderInCluster()
+        if len(current_leaders) > 1:
+            raise TooManyLeaders
+        return next(iter(current_leaders))
+
+
+class TooManyLeaders(Exception):
+    pass
