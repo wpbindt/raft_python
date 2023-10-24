@@ -7,12 +7,12 @@ from dataclasses import dataclass
 from datetime import timedelta
 from itertools import count
 from random import random
-from typing import NoReturn, Iterable
+from typing import Iterable
 
 
 class Role(ABC):
     @abstractmethod
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         pass
 
     @abstractmethod
@@ -27,7 +27,7 @@ class NoLeaderInCluster:
 
 @dataclass(frozen=True)
 class Leader(Role):
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
@@ -36,7 +36,7 @@ class Leader(Role):
 
 @dataclass(frozen=True)
 class Candidate(Role):
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
@@ -47,7 +47,7 @@ class Candidate(Role):
 class Subject(Role):
     node: Node | None = None
 
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         await election_timeout.wait()
         self.node.change_role(Candidate())
 
@@ -59,7 +59,7 @@ class Subject(Role):
 class Down(Role):
     previous_role: UpRole
 
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
@@ -82,14 +82,14 @@ class Node:
         self._role = new_role
 
     async def take_down(self) -> None:
-        if isinstance(self._role, UpRole):
+        if isinstance(self._role, (Leader, Subject, Candidate)):
             self._role = Down(self._role)
 
     async def bring_back_up(self) -> None:
         if isinstance(self._role, Down):
             self._role = self._role.previous_role
 
-    async def run(self, election_timeout: ElectionTimeout) -> NoReturn:
+    async def run(self, election_timeout: ElectionTimeout) -> None:
         await self._role.run(election_timeout)
 
 
@@ -126,7 +126,7 @@ class Cluster:
             raise TooManyLeaders
         return next(iter(current_leaders))
 
-    async def run(self) -> NoReturn:
+    async def run(self) -> None:
         await asyncio.gather(*[node.run(self._election_timeout) for node in self._nodes])
 
 
