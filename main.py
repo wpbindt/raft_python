@@ -16,16 +16,27 @@ class Subject:
     pass
 
 
-Role = Leader | Subject
+@dataclass(frozen=True)
+class Down:
+    pass
+
+
+Role = Leader | Subject | Down
 
 
 class Node:
     def __init__(self, initial_role: Role = Leader()) -> None:
-        self._initial_role = initial_role
+        self._role = initial_role
 
     @property
     def role(self) -> Role:
-        return self._initial_role
+        return self._role
+
+    async def take_down(self) -> None:
+        self._role = Down()
+
+    async def bring_back_up(self) -> None:
+        pass
 
 
 class Cluster:
