@@ -111,7 +111,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.05)
 
-        assert the_node.role == Candidate()
+        assert isinstance(the_node.role, Candidate)
 
     async def test_leader_nodes_do_not_become_candidates(self) -> None:
         the_node = Node(initial_role=Leader())
@@ -136,7 +136,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.03)
 
-        assert the_node.role == Candidate()
+        assert isinstance(the_node.role, Candidate)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
         the_node = Node(initial_role=Subject())
@@ -164,7 +164,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.1)
 
-        assert subject.role != Candidate()
+        assert not isinstance(subject.role, Candidate)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
         subject = Node(initial_role=Subject())
@@ -181,7 +181,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(candidacy_timeout.total_seconds())
 
-        assert subject.role == Candidate()
+        assert isinstance(subject.role, Candidate)
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
         self.fail(

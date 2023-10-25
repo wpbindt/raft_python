@@ -9,7 +9,8 @@ from quorum.cluster.configuration import ClusterConfiguration
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node
 from quorum.node.role.role import Role
-from quorum.node.role.type_aliases import UpRole
+if typing.TYPE_CHECKING:
+    from quorum.node.role.type_aliases import UpRole
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
@@ -27,4 +28,7 @@ class Down(Role):
         pass
 
     def stop_running(self) -> None:
+        pass
+
+    async def take_down(self) -> None:
         pass

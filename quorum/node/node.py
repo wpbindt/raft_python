@@ -1,9 +1,6 @@
 from __future__ import annotations
-from quorum.cluster.configuration import ClusterConfiguration
 
-from quorum.node.role.subject import Subject
-from quorum.node.role.candidate import Candidate
-from quorum.node.role.leader import Leader
+from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.down import Down
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
@@ -28,8 +25,7 @@ class Node:
         self._role = new_role
 
     async def take_down(self) -> None:
-        if isinstance(self._role, (Leader, Subject, Candidate)):
-            self.change_role(Down(self._role))
+        await self._role.take_down()
 
     async def bring_back_up(self) -> None:
         if isinstance(self._role, Down):

@@ -24,3 +24,7 @@ class Role(ABC):
     @abstractmethod
     def stop_running(self) -> None:
         pass
+
+    @abstractmethod
+    async def take_down(self) -> None:
+        pass
