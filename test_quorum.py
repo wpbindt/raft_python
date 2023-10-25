@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import asyncio
 import unittest
 from datetime import timedelta
@@ -180,3 +182,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(candidacy_timeout.total_seconds())
 
         assert subject.role == Candidate()
+
+    async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
+        self.fail(
+            'should be like the above, but I clearly dont '
+            'understand the test suite as it is (or my implementations are faulty'
+        )
