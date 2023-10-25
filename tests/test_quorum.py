@@ -26,6 +26,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     def assert_is_subject(self, node: Node) -> None:
         self._assert_role_has_type(node, Subject)
 
+    def assert_is_leader(self, node: Node) -> None:
+        self._assert_role_has_type(node, Leader)
+
     async def eventually(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):
             with suppress(AssertionError):
@@ -215,3 +218,13 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await leader.take_down()
 
         await self.eventually(lambda: self.assert_is_candidate(subject))
+
+    async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
+        subject = Node(initial_role=Subject())
+        election_timeout = timedelta(seconds=0.01)
+        await self.get_cluster(
+            nodes={subject},
+            election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
+        )
+
+        await self.eventually(lambda: self.assert_is_leader(subject))
