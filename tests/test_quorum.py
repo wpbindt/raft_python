@@ -14,11 +14,14 @@ from quorum.cluster.cluster import NoLeaderInCluster, Cluster, TooManyLeaders
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
+    def assert_is_candidate(self, node: Node) -> None:
+        self.assertIsInstance(node.role, Candidate)
+
     async def get_cluster(
         self,
         nodes: set[Node],
         election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
-        heartbeat_period: timedelta = timedelta(days=1),
+        heartbeat_period: timedelta = timedelta(seconds=1),
     ) -> Cluster:
         cluster = Cluster(
             nodes=nodes,
@@ -111,7 +114,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.05)
 
-        assert isinstance(the_node.role, Candidate)
+        self.assert_is_candidate(the_node)
 
     async def test_leader_nodes_do_not_become_candidates(self) -> None:
         the_node = Node(initial_role=Leader())
@@ -136,7 +139,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.03)
 
-        assert isinstance(the_node.role, Candidate)
+        self.assert_is_candidate(the_node)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
         the_node = Node(initial_role=Subject())
@@ -181,10 +184,20 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(candidacy_timeout.total_seconds())
 
-        assert isinstance(subject.role, Candidate)
+        self.assert_is_candidate(subject)
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
-        self.fail(
-            'should be like the above, but I clearly dont '
-            'understand the test suite as it is (or my implementations are faulty'
+        subject = Node(initial_role=Subject())
+        leader = Node(initial_role=Leader())
+        election_timeout = timedelta(seconds=0.2)
+        heartbeat_period = timedelta(seconds=0.1)
+        await self.get_cluster(
+            nodes={leader, subject},
+            election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
+            heartbeat_period=heartbeat_period,
         )
+        await asyncio.sleep(heartbeat_period.total_seconds() + 0.05)
+        await leader.take_down()
+        await asyncio.sleep(election_timeout.total_seconds() + 0.1)
+
+        self.assert_is_candidate(subject)
