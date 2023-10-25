@@ -29,6 +29,11 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     def assert_is_leader(self, node: Node) -> None:
         self._assert_role_has_type(node, Leader)
 
+    async def remains_true(self, assertion: Callable[[], None]) -> None:
+        for _ in range(34):
+            assertion()
+            await asyncio.sleep(0.03)
+
     async def eventually(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):
             with suppress(AssertionError):
@@ -228,3 +233,20 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         )
 
         await self.eventually(lambda: self.assert_is_leader(subject))
+
+    async def test_that_leaderless_cluster_eventually_has_exactly_one_leader(self) -> None:
+        subjects = {
+            Node(initial_role=Subject()),
+            Node(initial_role=Subject()),
+        }
+        cluster = await self.get_cluster(
+            nodes=subjects,
+            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.5), min_timeout=timedelta(seconds=0.1)),
+            heartbeat_period=timedelta(0.01),
+        )
+
+        def assertion() -> None:
+            assert cluster.take_me_to_a_leader() in subjects
+
+        await self.eventually(lambda: assertion())
+        await self.remains_true(lambda: assertion())
