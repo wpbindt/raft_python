@@ -36,10 +36,7 @@ class Leader(Role):
         self._stopped = True
 
     async def take_down(self) -> None:
-        self._node.change_role(Down(
-            previous_role=self,
-            node=self._node,
-        ))
+        self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:
         pass

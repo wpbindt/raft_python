@@ -32,10 +32,7 @@ class Subject(Role):
         pass
 
     async def take_down(self) -> None:
-        self.node.change_role(Down(
-            previous_role=self,
-            node=self.node,
-        ))
+        self.node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:
         pass

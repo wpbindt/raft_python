@@ -17,9 +17,9 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 @dataclass
 class Down(Role):
-    def __init__(self, previous_role: UpRole, node: Node) -> None:
+    def __init__(self, previous_role: UpRole) -> None:
         self._previous_role = previous_role
-        self._node = node
+        self._node: None | Node = None
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)

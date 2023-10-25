@@ -22,6 +22,7 @@ class Node:
     def change_role(self, new_role: Role) -> None:
         self._role.stop_running()
         self._role = new_role
+        new_role.set_node(self)
 
     async def take_down(self) -> None:
         await self._role.take_down()
