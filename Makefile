@@ -1,3 +1,5 @@
+.PHONY: tests
+
 image:
 	docker build -t quorum .
 
