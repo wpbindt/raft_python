@@ -40,11 +40,13 @@ class Leader(Role):
         self._stopped = False
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+        self._stopped = False
         while not self._stopped:
             await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
-            if not self._stopped:
-                for node in other_nodes:
-                    node.heartbeat()
+            if self._stopped:
+                return
+            for node in other_nodes:
+                node.heartbeat()
 
     def set_node(self, node: Node) -> None:
         pass
