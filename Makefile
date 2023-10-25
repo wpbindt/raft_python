@@ -1,8 +1,8 @@
 image:
 	docker build -t quorum .
 
-mypy: image
+mypy:
 	docker run -v $(CURDIR):/srv quorum mypy .
 
-tests: image
+tests:
 	docker run -v $(CURDIR):/srv quorum python3 -m unittest discover tests

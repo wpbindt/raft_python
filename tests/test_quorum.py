@@ -25,7 +25,6 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     def assert_is_subject(self, node: Node) -> None:
         self._assert_role_has_type(node, Subject)
 
-
     async def get_cluster(
         self,
         nodes: set[Node],

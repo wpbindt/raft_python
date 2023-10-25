@@ -26,7 +26,7 @@ class Down(Role):
         self._node = node
 
     def heartbeat(self) -> HeartbeatResponse:
-        pass
+        return HeartbeatResponse()
 
     def stop_running(self) -> None:
         pass
@@ -35,4 +35,5 @@ class Down(Role):
         pass
 
     async def bring_back_up(self) -> None:
+        assert self._node is not None
         self._node.change_role(self._previous_role)

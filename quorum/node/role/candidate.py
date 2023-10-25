@@ -24,12 +24,13 @@ class Candidate(Role):
         pass
 
     def heartbeat(self) -> HeartbeatResponse:
-        pass
+        return HeartbeatResponse()
 
     def stop_running(self) -> None:
         pass
 
     async def take_down(self) -> None:
+        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:

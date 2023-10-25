@@ -13,7 +13,7 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
 class Leader(Role):
-    def __init__(self):
+    def __init__(self) -> None:
         self._stopped = False
         self._node: None | Node = None
 
@@ -30,12 +30,13 @@ class Leader(Role):
         self._node = node
 
     def heartbeat(self) -> HeartbeatResponse:
-        pass
+        return HeartbeatResponse()
 
     def stop_running(self) -> None:
         self._stopped = True
 
     async def take_down(self) -> None:
+        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:

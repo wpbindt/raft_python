@@ -38,4 +38,4 @@ class Node:
             )
 
     def heartbeat(self) -> HeartbeatResponse:
-        self._role.heartbeat()
+        return self._role.heartbeat()

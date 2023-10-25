@@ -25,6 +25,7 @@ class Subject(Role):
             if self._stopped:
                 return
             if not self._beaten:
+                assert self._node is not None
                 self._node.change_role(Candidate())
             self._beaten = False
 
@@ -33,11 +34,13 @@ class Subject(Role):
 
     def heartbeat(self) -> HeartbeatResponse:
         self._beaten = True
+        return HeartbeatResponse()
 
     def stop_running(self) -> None:
         self._stopped = True
 
     async def take_down(self) -> None:
+        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:
