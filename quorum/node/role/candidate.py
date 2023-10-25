@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import math
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
@@ -18,9 +19,16 @@ class Candidate(Role):
         self._node: None | Node = None
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
-        await asyncio.sleep(0.1)
         assert self._node is not None
-        self._node.change_role(Leader())
+        if len(other_nodes) == 0:
+            self._node.change_role(Leader())
+            return
+
+        for node in other_nodes:
+            if await node.request_vote():
+                self._node.change_role(Leader())
+                return
+        await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
         self._node = node

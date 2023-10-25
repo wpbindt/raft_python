@@ -3,6 +3,7 @@ from __future__ import annotations
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
+from quorum.node.role.subject import Subject
 
 
 class Node:
@@ -29,6 +30,9 @@ class Node:
 
     async def bring_back_up(self) -> None:
         await self._role.bring_back_up()
+
+    async def request_vote(self) -> bool:
+        return isinstance(self._role, Subject)
 
     async def run(self, cluster_configuration: ClusterConfiguration) -> None:
         while True:

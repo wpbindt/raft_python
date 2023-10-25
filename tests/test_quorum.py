@@ -26,6 +26,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     def assert_is_subject(self, node: Node) -> None:
         self._assert_role_has_type(node, Subject)
 
+    def assert_is_not_subject(self, node: Node) -> None:
+        self._assert_role_has_type(node, (Candidate, Leader))
+
     def assert_is_leader(self, node: Node) -> None:
         self._assert_role_has_type(node, Leader)
 
@@ -139,7 +142,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.05)
 
-        self.assert_is_candidate(the_node)
+        self.assert_is_not_subject(the_node)
 
     async def test_leader_nodes_do_not_become_candidates(self) -> None:
         the_node = Node(initial_role=Leader())
@@ -164,7 +167,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.03)
 
-        self.assert_is_candidate(the_node)
+        self.assert_is_not_subject(the_node)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
         the_node = Node(initial_role=Subject())
