@@ -14,7 +14,7 @@ HeartbeatResponse = None
 
 class Role(ABC):
     @abstractmethod
-    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         pass
 
     @abstractmethod
@@ -39,9 +39,9 @@ class Leader(Role):
     def __init__(self):
         self._stopped = False
 
-    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         while not self._stopped:
-            await asyncio.sleep(heartbeat_period.total_seconds())
+            await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
             if not self._stopped:
                 for node in other_nodes:
                     node.heartbeat()
@@ -58,7 +58,7 @@ class Leader(Role):
 
 @dataclass(frozen=True)
 class Candidate(Role):
-    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
@@ -76,8 +76,8 @@ class Subject(Role):
     node: Node | None = None
     beaten: bool = False
 
-    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
-        await election_timeout.wait()
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+        await cluster_configuration.election_timeout.wait()
         if not self.beaten:
             self.node.change_role(Candidate())
 
@@ -95,7 +95,7 @@ class Subject(Role):
 class Down(Role):
     previous_role: UpRole
 
-    async def run(self, election_timeout: ElectionTimeout, other_nodes: set[Node], heartbeat_period: timedelta) -> None:
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
@@ -137,12 +137,11 @@ class Node:
         if isinstance(self._role, Down):
             self.change_role(self._role.previous_role)
 
-    async def run(self, cluster_configuration: ClusterConfiguration)  -> None:
+    async def run(self, cluster_configuration: ClusterConfiguration) -> None:
         while True:
             await self._role.run(
-                election_timeout=cluster_configuration.election_timeout,
                 other_nodes=self._other_nodes,
-                heartbeat_period=cluster_configuration.heartbeat_period,
+                cluster_configuration=cluster_configuration,
             )
 
     def heartbeat(self) -> HeartbeatResponse:
