@@ -3,7 +3,8 @@ import unittest
 from datetime import timedelta
 from itertools import cycle
 
-from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate, ElectionTimeout
+from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate, ElectionTimeout, \
+    ClusterConfiguration
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -15,8 +16,10 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     ) -> Cluster:
         return Cluster(
             nodes=nodes,
-            election_timeout=election_timeout,
-            heartbeat_period=heartbeat_period,
+            cluster_configuration=ClusterConfiguration(
+                election_timeout=election_timeout,
+                heartbeat_period=heartbeat_period,
+            ),
         )
 
     async def test_empty_clusters_have_no_leader(self) -> None:

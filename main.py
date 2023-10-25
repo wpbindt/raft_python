@@ -149,6 +149,12 @@ class Node:
         self._role.heartbeat()
 
 
+@dataclass(frozen=True)
+class ClusterConfiguration:
+    election_timeout: ElectionTimeout
+    heartbeat_period: timedelta
+
+
 class ElectionTimeout:
     def __init__(
         self,
@@ -169,15 +175,14 @@ class Cluster:
     def __init__(
         self,
         nodes: set[Node],
-        election_timeout: ElectionTimeout = ElectionTimeout(timedelta(days=1)),
-        heartbeat_period: timedelta = timedelta(days=1),
+        cluster_configuration: ClusterConfiguration,
     ) -> None:
         self._nodes = nodes
         for node in self._nodes:
             for other_node in self._nodes:
                 node.register_node(other_node)
-        self._election_timeout = election_timeout
-        self._heartbeat_period = heartbeat_period
+        self._election_timeout = cluster_configuration.election_timeout
+        self._heartbeat_period = cluster_configuration.heartbeat_period
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
