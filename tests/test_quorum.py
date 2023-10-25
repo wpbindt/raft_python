@@ -4,7 +4,9 @@ import asyncio
 import unittest
 from datetime import timedelta
 from itertools import cycle
+from typing import Type
 
+from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
@@ -14,8 +16,15 @@ from quorum.cluster.cluster import NoLeaderInCluster, Cluster, TooManyLeaders
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
+    def _assert_role_has_type(self, node: Node, role_type: Type[Role] | tuple[Type[Role], ...]) -> None:
+        self.assertIsInstance(node.role, role_type)
+
     def assert_is_candidate(self, node: Node) -> None:
-        self.assertIsInstance(node.role, Candidate)
+        self._assert_role_has_type(node, Candidate)
+
+    def assert_is_subject(self, node: Node) -> None:
+        self._assert_role_has_type(node, Subject)
+
 
     async def get_cluster(
         self,
@@ -154,7 +163,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.01)
 
-        assert isinstance(the_node.role, Subject)
+        self.assert_is_subject(the_node)
 
     async def test_live_leaders_prevent_elections(self) -> None:
         subject = Node(initial_role=Subject())
@@ -167,7 +176,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await asyncio.sleep(0.1)
 
-        assert not isinstance(subject.role, Candidate)
+        self.assert_is_subject(subject)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
         subject = Node(initial_role=Subject())
