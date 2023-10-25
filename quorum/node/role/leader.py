@@ -1,0 +1,33 @@
+from __future__ import annotations
+import asyncio
+
+import typing
+
+from quorum.cluster.configuration import ClusterConfiguration
+if typing.TYPE_CHECKING:
+    from quorum.node.node import Node
+from quorum.node.role.role import Role
+from quorum.node.role.heartbeat_response import HeartbeatResponse
+
+
+class Leader(Role):
+    def __init__(self):
+        self._stopped = False
+
+    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+        self._stopped = False
+        while not self._stopped:
+            await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
+            if self._stopped:
+                return
+            for node in other_nodes:
+                node.heartbeat()
+
+    def set_node(self, node: Node) -> None:
+        pass
+
+    def heartbeat(self) -> HeartbeatResponse:
+        pass
+
+    def stop_running(self) -> None:
+        self._stopped = True

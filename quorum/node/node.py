@@ -1,0 +1,46 @@
+from __future__ import annotations
+from quorum.cluster.configuration import ClusterConfiguration
+
+from quorum.node.role.subject import Subject
+from quorum.node.role.candidate import Candidate
+from quorum.node.role.leader import Leader
+from quorum.node.role.down import Down
+from quorum.node.role.heartbeat_response import HeartbeatResponse
+from quorum.node.role.role import Role
+
+
+class Node:
+    def __init__(self, initial_role: Role) -> None:
+        self._role = initial_role
+        self._role.set_node(self)
+        self._other_nodes: set[Node] = set()
+
+    def register_node(self, node: Node) -> None:
+        if node != self:
+            self._other_nodes.add(node)
+
+    @property
+    def role(self) -> Role:
+        return self._role
+
+    def change_role(self, new_role: Role) -> None:
+        self._role.stop_running()
+        self._role = new_role
+
+    async def take_down(self) -> None:
+        if isinstance(self._role, (Leader, Subject, Candidate)):
+            self.change_role(Down(self._role))
+
+    async def bring_back_up(self) -> None:
+        if isinstance(self._role, Down):
+            self.change_role(self._role.previous_role)
+
+    async def run(self, cluster_configuration: ClusterConfiguration) -> None:
+        while True:
+            await self._role.run(
+                other_nodes=self._other_nodes,
+                cluster_configuration=cluster_configuration,
+            )
+
+    def heartbeat(self) -> HeartbeatResponse:
+        self._role.heartbeat()

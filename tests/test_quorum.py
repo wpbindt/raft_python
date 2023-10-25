@@ -5,8 +5,12 @@ import unittest
 from datetime import timedelta
 from itertools import cycle
 
-from main import Cluster, NoLeaderInCluster, Node, Subject, Leader, TooManyLeaders, Candidate, ElectionTimeout, \
-    ClusterConfiguration
+from quorum.node.role.subject import Subject
+from quorum.node.role.candidate import Candidate
+from quorum.node.role.leader import Leader
+from quorum.node.node import Node
+from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
+from quorum.cluster.cluster import NoLeaderInCluster, Cluster, TooManyLeaders
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -32,7 +36,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_one_node_one_leader(self) -> None:
-        the_node = Node()
+        the_node = Node(initial_role=Leader())
         cluster = await self.get_cluster({the_node})
 
         assert cluster.take_me_to_a_leader() == the_node
