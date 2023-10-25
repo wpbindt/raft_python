@@ -1,11 +1,12 @@
 from __future__ import annotations
+
 import asyncio
 import math
+import typing
 from dataclasses import dataclass
 
-import typing
-
 from quorum.cluster.configuration import ClusterConfiguration
+
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node
 from quorum.node.role.role import Role
@@ -14,15 +15,17 @@ if typing.TYPE_CHECKING:
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-@dataclass(frozen=True)
+@dataclass
 class Down(Role):
-    previous_role: UpRole
+    def __init__(self, previous_role: UpRole, node: Node) -> None:
+        self._previous_role = previous_role
+        self._node = node
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)
 
     def set_node(self, node: Node) -> None:
-        pass
+        self._node = node
 
     def heartbeat(self) -> HeartbeatResponse:
         pass
@@ -32,3 +35,6 @@ class Down(Role):
 
     async def take_down(self) -> None:
         pass
+
+    async def bring_back_up(self) -> None:
+        self._node.change_role(self._previous_role)

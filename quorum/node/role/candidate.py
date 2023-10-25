@@ -1,7 +1,7 @@
 from __future__ import annotations
+
 import asyncio
 import math
-from dataclasses import dataclass
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
@@ -30,4 +30,10 @@ class Candidate(Role):
         pass
 
     async def take_down(self) -> None:
-        self._node.change_role(Down(self))
+        self._node.change_role(Down(
+            previous_role=self,
+            node=self._node,
+        ))
+
+    async def bring_back_up(self) -> None:
+        pass

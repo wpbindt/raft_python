@@ -28,3 +28,7 @@ class Role(ABC):
     @abstractmethod
     async def take_down(self) -> None:
         pass
+
+    @abstractmethod
+    async def bring_back_up(self) -> None:
+        pass
