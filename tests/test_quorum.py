@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import asyncio
 import unittest
+from contextlib import suppress
 from datetime import timedelta
 from itertools import cycle
-from typing import Type
+from typing import Type, Callable
 
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
@@ -24,6 +25,14 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     def assert_is_subject(self, node: Node) -> None:
         self._assert_role_has_type(node, Subject)
+
+    async def eventually(self, assertion: Callable[[], None]) -> None:
+        for _ in range(34):
+            with suppress(AssertionError):
+                assertion()
+                return
+            await asyncio.sleep(0.03)
+        assertion()
 
     async def get_cluster(
         self,
@@ -190,9 +199,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.5 * heartbeat.total_seconds())
         await leader.take_down()
 
-        await asyncio.sleep(candidacy_timeout.total_seconds())
-
-        self.assert_is_candidate(subject)
+        await self.eventually(lambda: self.assert_is_candidate(subject))
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
         subject = Node(initial_role=Subject())
@@ -206,6 +213,5 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         )
         await asyncio.sleep(heartbeat_period.total_seconds() + 0.05)
         await leader.take_down()
-        await asyncio.sleep(election_timeout.total_seconds() + 0.1)
 
-        self.assert_is_candidate(subject)
+        await self.eventually(lambda: self.assert_is_candidate(subject))
