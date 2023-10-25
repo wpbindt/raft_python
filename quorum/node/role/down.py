@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import math
 import typing
-from dataclasses import dataclass
 
 from quorum.cluster.configuration import ClusterConfiguration
 
@@ -15,7 +14,6 @@ if typing.TYPE_CHECKING:
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-@dataclass
 class Down(Role):
     def __init__(self, previous_role: UpRole) -> None:
         self._previous_role = previous_role
