@@ -137,12 +137,12 @@ class Node:
         if isinstance(self._role, Down):
             self.change_role(self._role.previous_role)
 
-    async def run(self, election_timeout: ElectionTimeout, heartbeat_period: timedelta) -> None:
+    async def run(self, cluster_configuration: ClusterConfiguration)  -> None:
         while True:
             await self._role.run(
-                election_timeout=election_timeout,
+                election_timeout=cluster_configuration.election_timeout,
                 other_nodes=self._other_nodes,
-                heartbeat_period=heartbeat_period,
+                heartbeat_period=cluster_configuration.heartbeat_period,
             )
 
     def heartbeat(self) -> HeartbeatResponse:
@@ -181,8 +181,7 @@ class Cluster:
         for node in self._nodes:
             for other_node in self._nodes:
                 node.register_node(other_node)
-        self._election_timeout = cluster_configuration.election_timeout
-        self._heartbeat_period = cluster_configuration.heartbeat_period
+        self._configuration = cluster_configuration
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
@@ -193,7 +192,7 @@ class Cluster:
         return next(iter(current_leaders))
 
     async def run(self) -> None:
-        await asyncio.gather(*[node.run(self._election_timeout, self._heartbeat_period) for node in self._nodes])
+        await asyncio.gather(*[node.run(self._configuration) for node in self._nodes])
 
 
 class TooManyLeaders(Exception):
