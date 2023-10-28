@@ -32,6 +32,12 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
     def assert_is_leader(self, node: Node) -> None:
         self._assert_role_has_type(node, Leader)
 
+    def create_subject_node(self) -> Node:
+        return Node(Subject())
+
+    def create_leader_node(self) -> Node:
+        return Node(Leader())
+
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):
             assertion()
@@ -67,28 +73,28 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_one_node_one_leader(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_two_nodes_one_leader(self) -> None:
-        leader = Node(initial_role=Leader())
-        follower = Node(initial_role=Subject())
+        leader = self.create_leader_node()
+        follower = self.create_subject_node()
         cluster = await self.get_cluster({leader, follower})
 
         assert cluster.take_me_to_a_leader() == leader
 
     async def test_two_nodes_multiple_leaders(self) -> None:
-        leader = Node(initial_role=Leader())
-        follower = Node(initial_role=Leader())
+        leader = self.create_leader_node()
+        follower = self.create_leader_node()
         cluster = await self.get_cluster({leader, follower})
 
         with self.assertRaises(TooManyLeaders):
             assert cluster.take_me_to_a_leader()
 
     async def test_down_means_not_a_leader(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -96,7 +102,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_down_then_back_up_means_leader_back(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -105,7 +111,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_resurrected_subjects_are_subjects(self) -> None:
-        the_node = Node(initial_role=Subject())
+        the_node = self.create_subject_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -114,7 +120,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_down_is_idempotent(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -124,7 +130,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node, str(cluster.take_me_to_a_leader())
 
     async def test_up_is_idempotent(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -134,7 +140,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_non_leader_nodes_announce_candidacy_after_election_timeout_passes(self) -> None:
-        the_node = Node(initial_role=Subject())
+        the_node = self.create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
@@ -145,7 +151,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_leader_nodes_do_not_become_candidates(self) -> None:
-        the_node = Node(initial_role=Leader())
+        the_node = self.create_leader_node()
         cluster = await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
@@ -156,7 +162,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_candidacy_is_announced_in_random_way(self) -> None:
-        the_node = Node(initial_role=Subject())
+        the_node = self.create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -170,7 +176,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
-        the_node = Node(initial_role=Subject())
+        the_node = self.create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -185,8 +191,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(the_node)
 
     async def test_live_leaders_prevent_elections(self) -> None:
-        subject = Node(initial_role=Subject())
-        leader = Node(initial_role=Leader())
+        subject = self.create_subject_node()
+        leader = self.create_leader_node()
         await self.get_cluster(
             nodes={leader, subject},
             election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.05), min_timeout=timedelta(seconds=0.05)),
@@ -198,8 +204,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(subject)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
-        subject = Node(initial_role=Subject())
-        leader = Node(initial_role=Leader())
+        subject = self.create_subject_node()
+        leader = self.create_leader_node()
         heartbeat = timedelta(seconds=0.03)
         candidacy_timeout = timedelta(seconds=0.05)
         await self.get_cluster(
@@ -213,8 +219,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_candidate(subject))
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
-        subject = Node(initial_role=Subject())
-        leader = Node(initial_role=Leader())
+        subject = self.create_subject_node()
+        leader = self.create_leader_node()
         election_timeout = timedelta(seconds=0.2)
         heartbeat_period = timedelta(seconds=0.1)
         await self.get_cluster(
@@ -228,7 +234,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_candidate(subject))
 
     async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
-        subject = Node(initial_role=Subject())
+        subject = self.create_subject_node()
         election_timeout = timedelta(seconds=0.01)
         await self.get_cluster(
             nodes={subject},
@@ -239,8 +245,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_leaderless_cluster_eventually_has_exactly_one_leader(self) -> None:
         subjects = {
-            Node(initial_role=Subject()),
-            Node(initial_role=Subject()),
+            self.create_subject_node(),
+            self.create_subject_node(),
         }
         cluster = await self.get_cluster(
             nodes=subjects,
@@ -255,12 +261,12 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.remains_true(lambda: assertion())
 
     async def test_that_when_there_are_two_leaders_one_steps_down(self) -> None:
-        subjects = {
-            Node(initial_role=Leader()),
-            Node(initial_role=Leader()),
+        leaders = {
+            self.create_leader_node(),
+            self.create_leader_node(),
         }
         cluster = await self.get_cluster(
-            nodes=subjects,
+            nodes=leaders,
             heartbeat_period=timedelta(seconds=0.1),
         )
 
