@@ -253,21 +253,3 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await self.eventually(lambda: assertion())
         await self.remains_true(lambda: assertion())
-
-    async def test_that_leaderless_cluster_eventually_has_exactly_one_leader_part_three(self) -> None:
-        subjects = {
-            Node(initial_role=Subject()),
-            Node(initial_role=Subject()),
-            Node(initial_role=Subject()),
-        }
-        cluster = await self.get_cluster(
-            nodes=subjects,
-            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.5), min_timeout=timedelta(seconds=0.1)),
-            heartbeat_period=timedelta(0.01),
-        )
-
-        def assertion() -> None:
-            assert cluster.take_me_to_a_leader() in subjects
-
-        await self.eventually(lambda: assertion())
-        await self.remains_true(lambda: assertion())
