@@ -253,3 +253,21 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await self.eventually(lambda: assertion())
         await self.remains_true(lambda: assertion())
+
+    async def test_that_when_there_are_two_leaders_one_steps_down(self) -> None:
+        subjects = {
+            Node(initial_role=Leader()),
+            Node(initial_role=Leader()),
+        }
+        cluster = await self.get_cluster(
+            nodes=subjects,
+            heartbeat_period=timedelta(seconds=0.1),
+        )
+
+        def assertion() -> None:
+            try:
+                cluster.take_me_to_a_leader()
+            except TooManyLeaders:
+                self.fail()
+
+        await self.eventually(lambda: assertion())

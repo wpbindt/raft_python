@@ -30,6 +30,9 @@ class Leader(Role):
         self._node = node
 
     def heartbeat(self) -> HeartbeatResponse:
+        from quorum.node.role.subject import Subject
+        assert self._node is not None
+        self._node.change_role(Subject())
         return HeartbeatResponse()
 
     def stop_running(self) -> None:
