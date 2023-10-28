@@ -1,10 +1,11 @@
-.PHONY: tests
+.PHONY: tests mypy image
+DOCKER_IMAGE := quorum
 
 image:
-	docker build -t quorum .
+	docker build -t ${DOCKER_IMAGE} .
 
 mypy:
-	docker run -v $(CURDIR):/srv quorum mypy .
+	docker run -v $(CURDIR):/srv ${DOCKER_IMAGE} mypy .
 
 tests:
-	docker run -v $(CURDIR):/srv quorum python3 -m unittest discover tests
+	docker run -v $(CURDIR):/srv ${DOCKER_IMAGE} python3 -m unittest discover tests
