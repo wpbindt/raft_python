@@ -245,7 +245,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         cluster = await self.get_cluster(
             nodes=subjects,
             election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.5), min_timeout=timedelta(seconds=0.1)),
-            heartbeat_period=timedelta(0.01),
+            heartbeat_period=timedelta(seconds=0.01),
         )
 
         def assertion() -> None:
