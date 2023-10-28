@@ -28,7 +28,9 @@ class Cluster:
     def _set_up_logger(self) -> None:
         logger = logging.getLogger()
         if len(logger.handlers) == 0:
-            logger.addHandler(logging.StreamHandler())
+            handler = logging.StreamHandler()
+            handler.setFormatter(logging.Formatter('%(asctime)s,%(msecs)03d - %(message)s', datefmt='%H:%M:%S'))
+            logger.addHandler(handler)
         logger.setLevel(logging.INFO)
 
     def _let_nodes_know_of_each_others_existence(self) -> None:
