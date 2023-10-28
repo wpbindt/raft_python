@@ -33,16 +33,10 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self._assert_role_has_type(node, Leader)
 
     def create_subject_node(self) -> Node:
-        def create_subject(node: Node) -> Subject:
-            subject = Subject(node)
-            return subject
-        return Node(create_subject)
+        return Node(lambda node: Subject(node))
 
     def create_leader_node(self) -> Node:
-        def create_leader(node: Node) -> Leader:
-            subject = Leader(node)
-            return subject
-        return Node(create_leader)
+        return Node(lambda node: Leader(node))
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):
@@ -283,3 +277,16 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
                 self.fail()
 
         await self.eventually(lambda: assertion())
+
+    async def test_that_when_confronted_with_a_candidate_leader_steps_down(self) -> None:
+        leader = self.create_leader_node()
+        candidate = self.create_candidate_node()
+        await self.get_cluster(
+            nodes={candidate, leader},
+            heartbeat_period=timedelta(seconds=0.1),
+        )
+
+        await self.eventually(lambda: self.assert_is_subject(leader))
+
+    def create_candidate_node(self) -> Node:
+        return Node(lambda node: Candidate(node))
