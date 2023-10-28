@@ -17,13 +17,13 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 class Down(Role):
     def __init__(self, previous_role: UpRole) -> None:
         self._previous_role = previous_role
-        self._node: None | Node = None
+        self._node = previous_role.get_node()
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)
 
-    def set_node(self, node: Node) -> None:
-        self._node = node
+    def get_node(self) -> Node:
+        return self._node
 
     def heartbeat(self) -> HeartbeatResponse:
         return HeartbeatResponse()
@@ -35,7 +35,6 @@ class Down(Role):
         pass
 
     async def bring_back_up(self) -> None:
-        assert self._node is not None
         self._node.change_role(self._previous_role)
 
     def __str__(self) -> str:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from logging import getLogger
 import random
+from logging import getLogger
+from typing import Callable
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.heartbeat_response import HeartbeatResponse
@@ -10,10 +11,9 @@ from quorum.node.role.subject import Subject
 
 
 class Node:
-    def __init__(self, initial_role: Role) -> None:
+    def __init__(self, initial_role: Callable[[Node], Role]) -> None:
         self._id = random.randint(0, 365)
-        self._role = initial_role
-        self._role.set_node(self)
+        self._role = initial_role(self)
         self._other_nodes: set[Node] = set()
 
     def register_node(self, node: Node) -> None:
@@ -29,7 +29,6 @@ class Node:
         self._log(f'changing role from {self._role} to {new_role}')
         self._role.stop_running()
         self._role = new_role
-        new_role.set_node(self)
 
     async def take_down(self) -> None:
         await self._role.take_down()

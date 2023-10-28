@@ -33,10 +33,16 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self._assert_role_has_type(node, Leader)
 
     def create_subject_node(self) -> Node:
-        return Node(Subject())
+        def create_subject(node: Node) -> Subject:
+            subject = Subject(node)
+            return subject
+        return Node(create_subject)
 
     def create_leader_node(self) -> Node:
-        return Node(Leader())
+        def create_leader(node: Node) -> Leader:
+            subject = Leader(node)
+            return subject
+        return Node(create_leader)
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):

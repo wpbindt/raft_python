@@ -14,7 +14,7 @@ class Role(ABC):
         pass
 
     @abstractmethod
-    def set_node(self, node: Node) -> None:
+    def get_node(self) -> Node:
         pass
 
     @abstractmethod

@@ -13,8 +13,8 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
 class Subject(Role):
-    def __init__(self) -> None:
-        self._node: Node | None = None
+    def __init__(self, node: Node) -> None:
+        self._node = node
         self._beaten = False
         self._stopped = False
 
@@ -25,12 +25,11 @@ class Subject(Role):
             if self._stopped:
                 return
             if not self._beaten:
-                assert self._node is not None
-                self._node.change_role(Candidate())
+                self._node.change_role(Candidate(self._node))
             self._beaten = False
 
-    def set_node(self, node: Node) -> None:
-        self._node = node
+    def get_node(self) -> Node:
+        return self._node
 
     def heartbeat(self) -> HeartbeatResponse:
         self._beaten = True
@@ -40,7 +39,6 @@ class Subject(Role):
         self._stopped = True
 
     async def take_down(self) -> None:
-        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:

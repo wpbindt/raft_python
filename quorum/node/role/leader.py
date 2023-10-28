@@ -13,9 +13,9 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
 class Leader(Role):
-    def __init__(self) -> None:
+    def __init__(self, node: Node) -> None:
         self._stopped = False
-        self._node: None | Node = None
+        self._node = node
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         self._stopped = False
@@ -26,20 +26,18 @@ class Leader(Role):
             for node in other_nodes:
                 node.heartbeat()
 
-    def set_node(self, node: Node) -> None:
-        self._node = node
+    def get_node(self) -> Node:
+        return self._node
 
     def heartbeat(self) -> HeartbeatResponse:
         from quorum.node.role.subject import Subject
-        assert self._node is not None
-        self._node.change_role(Subject())
+        self._node.change_role(Subject(self._node))
         return HeartbeatResponse()
 
     def stop_running(self) -> None:
         self._stopped = True
 
     async def take_down(self) -> None:
-        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:

@@ -15,23 +15,22 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
 class Candidate(Role):
-    def __init__(self) -> None:
-        self._node: None | Node = None
+    def __init__(self, node: Node) -> None:
+        self._node = node
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
-        assert self._node is not None
         if len(other_nodes) == 0:
-            self._node.change_role(Leader())
+            self._node.change_role(Leader(self._node))
             return
 
         for node in other_nodes:
             if await node.request_vote():
-                self._node.change_role(Leader())
+                self._node.change_role(Leader(self._node))
                 return
         await asyncio.sleep(math.inf)
 
-    def set_node(self, node: Node) -> None:
-        self._node = node
+    def get_node(self) -> Node:
+        return self._node
 
     def heartbeat(self) -> HeartbeatResponse:
         return HeartbeatResponse()
@@ -40,7 +39,6 @@ class Candidate(Role):
         pass
 
     async def take_down(self) -> None:
-        assert self._node is not None
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:
