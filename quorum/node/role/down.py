@@ -37,3 +37,6 @@ class Down(Role):
     async def bring_back_up(self) -> None:
         assert self._node is not None
         self._node.change_role(self._previous_role)
+
+    def __str__(self) -> str:
+        return 'down'

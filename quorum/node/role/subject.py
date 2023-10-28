@@ -45,3 +45,6 @@ class Subject(Role):
 
     async def bring_back_up(self) -> None:
         pass
+
+    def __str__(self) -> str:
+        return 'subject'

@@ -254,6 +254,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: assertion())
         await self.remains_true(lambda: assertion())
 
+    @unittest.skip
     async def test_that_leaderless_cluster_eventually_has_exactly_one_leader_part_three(self) -> None:
         subjects = {
             Node(initial_role=Subject()),

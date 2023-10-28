@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from dataclasses import dataclass
 
 from quorum.node.role.leader import Leader
@@ -17,11 +18,23 @@ class Cluster:
         nodes: set[Node],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
+        self._set_up_logger()
+
+        self._configuration = cluster_configuration
         self._nodes = nodes
+
+        self._let_nodes_know_of_each_others_existence()
+
+    def _set_up_logger(self) -> None:
+        logger = logging.getLogger()
+        if len(logger.handlers) == 0:
+            logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+
+    def _let_nodes_know_of_each_others_existence(self) -> None:
         for node in self._nodes:
             for other_node in self._nodes:
                 node.register_node(other_node)
-        self._configuration = cluster_configuration
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
