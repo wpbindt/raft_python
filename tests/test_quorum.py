@@ -39,9 +39,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         return Node(lambda node: Leader(node))
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
-        for _ in range(34):
+        for _ in range(100):
             assertion()
-            await asyncio.sleep(0.03)
+            await asyncio.sleep(0.01)
 
     async def eventually(self, assertion: Callable[[], None]) -> None:
         for _ in range(34):
@@ -287,6 +287,23 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         )
 
         await self.eventually(lambda: self.assert_is_subject(leader))
+
+    async def test_that_a_leaderless_cluster_will_never_have_more_than_one_leader(self) -> None:
+        nodes = {self.create_subject_node() for _ in range(3)}
+        await self.get_cluster(
+            nodes=nodes,
+            election_timeout=ElectionTimeout(
+                max_timeout=timedelta(seconds=0.2),
+                min_timeout=timedelta(seconds=0.2)
+            ),
+            heartbeat_period=timedelta(seconds=0.03),
+        )
+
+        def assertion() -> None:
+            leaders = {node for node in nodes if isinstance(node.role, Leader)}
+            self.assertLessEqual(len(leaders), 1)
+
+        await self.remains_true(assertion)
 
     def create_candidate_node(self) -> Node:
         return Node(lambda node: Candidate(node))
