@@ -305,5 +305,22 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await self.remains_true(assertion)
 
+    async def test_that_all_candidate_cluster_eventually_has_leader(self) -> None:
+        nodes = {
+            self.create_candidate_node()
+            for _ in range(3)
+        }
+        election_timeout = timedelta(seconds=0.01)
+        await self.get_cluster(
+            nodes=nodes,
+            election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
+        )
+
+        def assertion():
+            leaders = {node for node in nodes if isinstance(node.role, Leader)}
+            self.assertGreater(len(leaders), 0)
+
+        await self.eventually(assertion)
+
     def create_candidate_node(self) -> Node:
         return Node(lambda node: Candidate(node))
