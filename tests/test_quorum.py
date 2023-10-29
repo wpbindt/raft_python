@@ -305,22 +305,28 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await self.remains_true(assertion)
 
-    async def test_that_all_candidate_cluster_eventually_has_leader(self) -> None:
-        nodes = {
-            self.create_candidate_node()
-            for _ in range(3)
+    async def test_that_with_majority_down_no_leader_is_elected(self) -> None:
+        live_nodes = {
+            self.create_subject_node(),
+            self.create_subject_node(),
         }
-        election_timeout = timedelta(seconds=0.01)
+        dead_nodes = {
+            self.create_subject_node(),
+            self.create_subject_node(),
+            self.create_leader_node(),
+        }
         await self.get_cluster(
-            nodes=nodes,
-            election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
+            nodes=dead_nodes | live_nodes,
+            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.1)),
         )
+        for dead_node in dead_nodes:
+            await dead_node.take_down()
 
-        def assertion():
-            leaders = {node for node in nodes if isinstance(node.role, Leader)}
-            self.assertGreater(len(leaders), 0)
+        def assertion() -> None:
+            leaders = {node for node in live_nodes if isinstance(node.role, Leader)}
+            self.assertEqual(len(leaders), 0)
 
-        await self.eventually(assertion)
+        await self.remains_true(assertion)
 
     def create_candidate_node(self) -> Node:
         return Node(lambda node: Candidate(node))
