@@ -19,18 +19,22 @@ class Candidate(Role):
         self._node = node
 
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
-        if len(other_nodes) == 0:
+        majority = (len(other_nodes | {self}) // 2) + 1
+        votes: list[bool] = []
+        for node in {self} | other_nodes:
+            votes.append(await self._request_vote_from(node))
+            if sum(votes) < majority:
+                continue
+
             self._node.change_role(Leader(self._node))
             return
 
-        majority = (len(other_nodes | {self}) // 2) + 1
-        votes: list[bool] = [True]  # vote for self
-        for node in other_nodes:
-            votes.append(await node.request_vote())
-            if sum(votes) >= majority:
-                self._node.change_role(Leader(self._node))
-                return
         await asyncio.sleep(math.inf)
+
+    async def _request_vote_from(self, node: Node) -> bool:
+        if node is self:
+            return True
+        return await node.request_vote()
 
     def get_node(self) -> Node:
         return self._node
