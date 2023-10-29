@@ -328,5 +328,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         await self.remains_true(assertion)
 
+    async def test_that_subjects_vote_at_most_once(self) -> None:
+        self.fail()
+
     def create_candidate_node(self) -> Node:
         return Node(lambda node: Candidate(node))
