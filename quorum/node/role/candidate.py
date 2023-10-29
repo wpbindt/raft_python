@@ -44,5 +44,8 @@ class Candidate(Role):
     async def bring_back_up(self) -> None:
         pass
 
+    async def request_vote(self) -> bool:
+        return False
+
     def __str__(self) -> str:
         return 'candidate'

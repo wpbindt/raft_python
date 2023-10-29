@@ -44,5 +44,8 @@ class Subject(Role):
     async def bring_back_up(self) -> None:
         pass
 
+    async def request_vote(self) -> bool:
+        return True
+
     def __str__(self) -> str:
         return 'subject'

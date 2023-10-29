@@ -32,3 +32,7 @@ class Role(ABC):
     @abstractmethod
     async def bring_back_up(self) -> None:
         pass
+
+    @abstractmethod
+    async def request_vote(self) -> bool:
+        pass

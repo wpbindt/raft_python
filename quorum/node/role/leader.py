@@ -43,5 +43,10 @@ class Leader(Role):
     async def bring_back_up(self) -> None:
         pass
 
+    async def request_vote(self) -> bool:
+        from quorum.node.role.subject import Subject
+        self._node.change_role(Subject(self._node))
+        return True
+
     def __str__(self) -> str:
         return 'leader'

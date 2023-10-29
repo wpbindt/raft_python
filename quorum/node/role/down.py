@@ -37,5 +37,8 @@ class Down(Role):
     async def bring_back_up(self) -> None:
         self._node.change_role(self._previous_role)
 
+    async def request_vote(self) -> bool:
+        return False
+
     def __str__(self) -> str:
         return 'down'
