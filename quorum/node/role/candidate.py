@@ -23,8 +23,11 @@ class Candidate(Role):
             self._node.change_role(Leader(self._node))
             return
 
+        majority = (len(other_nodes | {self}) // 2) + 1
+        votes: list[bool] = [True]  # vote for self
         for node in other_nodes:
-            if await node.request_vote():
+            votes.append(await node.request_vote())
+            if sum(votes) >= majority:
                 self._node.change_role(Leader(self._node))
                 return
         await asyncio.sleep(math.inf)
