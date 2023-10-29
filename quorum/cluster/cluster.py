@@ -49,6 +49,14 @@ class Cluster:
     async def run(self) -> None:
         await asyncio.gather(*[node.run(self._configuration) for node in self._nodes])
 
+    def __str__(self) -> str:
+        lines = [
+            'CLUSTER',
+            30 * '-',
+            *[str(node) for node in self._nodes],
+        ]
+        return '\n'.join(lines)
+
 
 class TooManyLeaders(Exception):
     pass
