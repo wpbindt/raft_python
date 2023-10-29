@@ -63,4 +63,4 @@ class Node:
 
     def _log(self, message: str) -> None:
         full_message = f'{self}: {message}'
-        getLogger().info(full_message)
+        getLogger().debug(full_message)
