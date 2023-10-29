@@ -21,7 +21,7 @@ class Cluster:
         self._set_up_logger()
 
         self._configuration = cluster_configuration
-        self._nodes = nodes
+        self._nodes = list(nodes)
 
         self._let_nodes_know_of_each_others_existence()
 
