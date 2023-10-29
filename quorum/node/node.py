@@ -6,6 +6,7 @@ from typing import Callable
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.heartbeat_response import HeartbeatResponse
+from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
 
@@ -37,7 +38,11 @@ class Node:
         await self._role.bring_back_up()
 
     async def request_vote(self) -> bool:
-        vote = isinstance(self._role, Subject)
+        if isinstance(self._role, Leader):
+            vote = True
+            self.change_role(Subject(self))
+        else:
+            vote = isinstance(self._role, Subject)
         self._log(f'voting {vote}')
         return vote
 
