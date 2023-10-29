@@ -30,13 +30,17 @@ class Node:
         self._role = new_role
 
     async def take_down(self) -> None:
+        self._log('going down')
         await self._role.take_down()
 
     async def bring_back_up(self) -> None:
+        self._log('going back up')
         await self._role.bring_back_up()
 
     async def request_vote(self) -> bool:
-        return await self._role.request_vote()
+        vote = await self._role.request_vote()
+        self._log(f'voting {vote}')
+        return vote
 
     async def run(self, cluster_configuration: ClusterConfiguration) -> None:
         while True:
