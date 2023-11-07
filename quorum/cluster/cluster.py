@@ -45,6 +45,10 @@ class Cluster(Generic[MessageType]):
                 node.register_node(other_node)
 
     async def send_message(self, message: MessageType) -> None:
+        node = next(iter(self._nodes))
+        from quorum.node.role.down import Down
+        if isinstance(node.role, Down):
+            return
         self._messages = (*self._messages, message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
