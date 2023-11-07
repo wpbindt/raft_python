@@ -29,6 +29,8 @@ class Cluster(Generic[MessageType]):
 
         self._let_nodes_know_of_each_others_existence()
 
+        self._messages: tuple[MessageType] = tuple()
+
     def _set_up_logger(self) -> None:
         logger = logging.getLogger()
         if len(logger.handlers) == 0:
@@ -43,10 +45,10 @@ class Cluster(Generic[MessageType]):
                 node.register_node(other_node)
 
     async def send_message(self, message: MessageType) -> None:
-        pass
+        self._messages = (*self._messages, message)
 
     async def get_messages(self) -> tuple[MessageType]:
-        return tuple()
+        return self._messages
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
