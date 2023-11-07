@@ -7,13 +7,14 @@ from datetime import timedelta
 from itertools import cycle
 from typing import Type, Callable
 
-from quorum.node.role.role import Role
-from quorum.node.role.subject import Subject
+from quorum.cluster.cluster import NoLeaderInCluster, Cluster, TooManyLeaders
+from quorum.cluster.configuration import ElectionTimeout
+from quorum.node.node import Node
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
-from quorum.node.node import Node
-from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
-from quorum.cluster.cluster import NoLeaderInCluster, Cluster, TooManyLeaders
+from quorum.node.role.role import Role
+from quorum.node.role.subject import Subject
+from tests.fixtures import get_cluster, create_subject_node, create_leader_node, create_candidate_node
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -31,12 +32,6 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     def assert_is_leader(self, node: Node) -> None:
         self._assert_role_has_type(node, Leader)
-
-    def create_subject_node(self) -> Node:
-        return Node(lambda node: Subject(node))
-
-    def create_leader_node(self) -> Node:
-        return Node(lambda node: Leader(node))
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(100):
@@ -57,15 +52,11 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
         heartbeat_period: timedelta = timedelta(seconds=1),
     ) -> Cluster:
-        cluster = Cluster(
+        return await get_cluster(
             nodes=nodes,
-            cluster_configuration=ClusterConfiguration(
-                election_timeout=election_timeout,
-                heartbeat_period=heartbeat_period,
-            ),
+            election_timeout=election_timeout,
+            heartbeat_period=heartbeat_period,
         )
-        asyncio.create_task(cluster.run())
-        return cluster
 
     async def test_empty_clusters_have_no_leader(self) -> None:
         cluster = await self.get_cluster(nodes=set())
@@ -73,28 +64,28 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_one_node_one_leader(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_two_nodes_one_leader(self) -> None:
-        leader = self.create_leader_node()
-        follower = self.create_subject_node()
+        leader = create_leader_node()
+        follower = create_subject_node()
         cluster = await self.get_cluster({leader, follower})
 
         assert cluster.take_me_to_a_leader() == leader
 
     async def test_two_nodes_multiple_leaders(self) -> None:
-        leader = self.create_leader_node()
-        follower = self.create_leader_node()
+        leader = create_leader_node()
+        follower = create_leader_node()
         cluster = await self.get_cluster({leader, follower})
 
         with self.assertRaises(TooManyLeaders):
             assert cluster.take_me_to_a_leader()
 
     async def test_down_means_not_a_leader(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -102,7 +93,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_down_then_back_up_means_leader_back(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -111,7 +102,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_resurrected_subjects_are_subjects(self) -> None:
-        the_node = self.create_subject_node()
+        the_node = create_subject_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -120,7 +111,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_down_is_idempotent(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -130,7 +121,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node, str(cluster.take_me_to_a_leader())
 
     async def test_up_is_idempotent(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster({the_node})
 
         await the_node.take_down()
@@ -140,7 +131,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_non_leader_nodes_announce_candidacy_after_election_timeout_passes(self) -> None:
-        the_node = self.create_subject_node()
+        the_node = create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
@@ -151,7 +142,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_leader_nodes_do_not_become_candidates(self) -> None:
-        the_node = self.create_leader_node()
+        the_node = create_leader_node()
         cluster = await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
@@ -162,7 +153,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_candidacy_is_announced_in_random_way(self) -> None:
-        the_node = self.create_subject_node()
+        the_node = create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -176,7 +167,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
-        the_node = self.create_subject_node()
+        the_node = create_subject_node()
         await self.get_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -191,8 +182,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(the_node)
 
     async def test_live_leaders_prevent_elections(self) -> None:
-        subject = self.create_subject_node()
-        leader = self.create_leader_node()
+        subject = create_subject_node()
+        leader = create_leader_node()
         await self.get_cluster(
             nodes={leader, subject},
             election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.05), min_timeout=timedelta(seconds=0.05)),
@@ -204,8 +195,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(subject)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
-        subject = self.create_subject_node()
-        leader = self.create_leader_node()
+        subject = create_subject_node()
+        leader = create_leader_node()
         heartbeat = timedelta(seconds=0.03)
         candidacy_timeout = timedelta(seconds=0.05)
         await self.get_cluster(
@@ -219,8 +210,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_candidate(subject))
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
-        subject = self.create_subject_node()
-        leader = self.create_leader_node()
+        subject = create_subject_node()
+        leader = create_leader_node()
         election_timeout = timedelta(seconds=0.2)
         heartbeat_period = timedelta(seconds=0.1)
         await self.get_cluster(
@@ -234,7 +225,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_candidate(subject))
 
     async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
-        subject = self.create_subject_node()
+        subject = create_subject_node()
         election_timeout = timedelta(seconds=0.01)
         await self.get_cluster(
             nodes={subject},
@@ -245,8 +236,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_leaderless_cluster_eventually_has_exactly_one_leader(self) -> None:
         subjects = {
-            self.create_subject_node(),
-            self.create_subject_node(),
+            create_subject_node(),
+            create_subject_node(),
         }
         cluster = await self.get_cluster(
             nodes=subjects,
@@ -262,8 +253,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_when_there_are_two_leaders_one_steps_down(self) -> None:
         leaders = {
-            self.create_leader_node(),
-            self.create_leader_node(),
+            create_leader_node(),
+            create_leader_node(),
         }
         cluster = await self.get_cluster(
             nodes=leaders,
@@ -279,8 +270,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: assertion())
 
     async def test_that_when_confronted_with_a_candidate_leader_steps_down(self) -> None:
-        leader = self.create_leader_node()
-        candidate = self.create_candidate_node()
+        leader = create_leader_node()
+        candidate = create_candidate_node()
         await self.get_cluster(
             nodes={candidate, leader},
             heartbeat_period=timedelta(seconds=0.1),
@@ -289,7 +280,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_subject(leader))
 
     async def test_that_a_leaderless_cluster_will_never_have_more_than_one_leader(self) -> None:
-        nodes = {self.create_subject_node() for _ in range(3)}
+        nodes = {create_subject_node() for _ in range(3)}
         await self.get_cluster(
             nodes=nodes,
             election_timeout=ElectionTimeout(
@@ -307,13 +298,13 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_with_majority_down_no_leader_is_elected(self) -> None:
         live_nodes = {
-            self.create_subject_node(),
-            self.create_subject_node(),
+            create_subject_node(),
+            create_subject_node(),
         }
         dead_nodes = {
-            self.create_subject_node(),
-            self.create_subject_node(),
-            self.create_leader_node(),
+            create_subject_node(),
+            create_subject_node(),
+            create_leader_node(),
         }
         await self.get_cluster(
             nodes=dead_nodes | live_nodes,
@@ -327,6 +318,3 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(leaders), 0)
 
         await self.remains_true(assertion)
-
-    def create_candidate_node(self) -> Node:
-        return Node(lambda node: Candidate(node))

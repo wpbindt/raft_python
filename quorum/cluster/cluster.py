@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
+from typing import Hashable, TypeVar, Generic
 
 from quorum.node.role.leader import Leader
 from quorum.node.node import Node
@@ -12,7 +13,10 @@ class NoLeaderInCluster:
     pass
 
 
-class Cluster:
+MessageType = TypeVar('MessageType', bound=Hashable)
+
+
+class Cluster(Generic[MessageType]):
     def __init__(
         self,
         nodes: set[Node],
@@ -37,6 +41,12 @@ class Cluster:
         for node in self._nodes:
             for other_node in self._nodes:
                 node.register_node(other_node)
+
+    async def send_message(self, message: MessageType) -> None:
+        pass
+
+    async def get_messages(self) -> tuple[MessageType]:
+        return tuple()
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
