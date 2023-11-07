@@ -15,8 +15,8 @@ async def get_cluster(
     nodes: set[Node],
     election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
     heartbeat_period: timedelta = timedelta(seconds=1),
-) -> Cluster:
-    cluster = Cluster(
+) -> Cluster[str]:
+    cluster = Cluster[str](
         nodes=nodes,
         cluster_configuration=ClusterConfiguration(
             election_timeout=election_timeout,

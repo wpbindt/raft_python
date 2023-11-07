@@ -31,7 +31,7 @@ async def main() -> NoReturn:
         Node(lambda node: Subject(node))
         for _ in range(5)
     }
-    cluster = Cluster(
+    cluster = Cluster[str](
         nodes=nodes,
         cluster_configuration=ClusterConfiguration(
             election_timeout=ElectionTimeout(

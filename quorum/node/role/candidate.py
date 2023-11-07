@@ -21,7 +21,7 @@ class Candidate(Role):
     async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
         majority = (len(other_nodes | {self}) // 2) + 1
         votes: list[bool] = []
-        for node in {self} | other_nodes:
+        for node in {self._node} | other_nodes:
             votes.append(await self._request_vote_from(node))
             if sum(votes) < majority:
                 continue
@@ -32,7 +32,7 @@ class Candidate(Role):
         await asyncio.sleep(math.inf)
 
     async def _request_vote_from(self, node: Node) -> bool:
-        if node is self:
+        if node.role is self:
             return True
         return await node.request_vote()
 
