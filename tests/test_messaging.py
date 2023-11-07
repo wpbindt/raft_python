@@ -16,7 +16,6 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
         self.assertTupleEqual(await cluster.get_messages(), ('Milkshake',))
 
-    @unittest.skip('later')
     async def test_down_nodes_do_not_take_messages(self) -> None:
         node = create_leader_node()
         cluster = await get_cluster({node})
