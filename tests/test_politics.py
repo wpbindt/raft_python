@@ -14,7 +14,7 @@ from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
-from tests.fixtures import get_cluster, create_subject_node, create_leader_node, create_candidate_node
+from tests.fixtures import get_running_cluster, create_subject_node, create_leader_node, create_candidate_node
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -52,7 +52,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
         heartbeat_period: timedelta = timedelta(seconds=1),
     ) -> Cluster:
-        return await get_cluster(
+        return await get_running_cluster(
             nodes=nodes,
             election_timeout=election_timeout,
             heartbeat_period=heartbeat_period,
