@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import asyncio
-import math
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
@@ -29,7 +27,8 @@ class Candidate(Role):
             self._node.change_role(Leader(self._node))
             return
 
-        await asyncio.sleep(math.inf)
+        from quorum.node.role.subject import Subject
+        self._node.change_role(Subject(self._node))
 
     async def _request_vote_from(self, node: INode) -> bool:
         if node is self._node:

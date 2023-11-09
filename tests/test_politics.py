@@ -195,34 +195,44 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(subject)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
-        subject = create_subject_node()
+        subject_1 = create_subject_node()
+        subject_2 = create_subject_node()
         leader = create_leader_node()
         heartbeat = timedelta(seconds=0.03)
         candidacy_timeout = timedelta(seconds=0.05)
         await self.get_cluster(
-            nodes={leader, subject},
+            nodes={leader, subject_1, subject_2},
             election_timeout=ElectionTimeout(max_timeout=candidacy_timeout, min_timeout=candidacy_timeout),
             heartbeat_period=timedelta(seconds=0.05),
         )
         await asyncio.sleep(0.5 * heartbeat.total_seconds())
         await leader.take_down()
 
-        await self.eventually(lambda: self.assert_is_candidate(subject))
+        def assertion() -> None:
+            node_roles = {type(subject_1.role), type(subject_2.role)}
+            self.assertIn(Leader, node_roles)
+
+        await self.eventually(assertion)
 
     async def test_leader_down_after_first_heartbeat_still_means_election(self) -> None:
-        subject = create_subject_node()
+        subject_1 = create_subject_node()
+        subject_2 = create_subject_node()
         leader = create_leader_node()
         election_timeout = timedelta(seconds=0.2)
         heartbeat_period = timedelta(seconds=0.1)
         await self.get_cluster(
-            nodes={leader, subject},
+            nodes={leader, subject_1, subject_2},
             election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
             heartbeat_period=heartbeat_period,
         )
         await asyncio.sleep(heartbeat_period.total_seconds() + 0.05)
         await leader.take_down()
 
-        await self.eventually(lambda: self.assert_is_candidate(subject))
+        def assertion() -> None:
+            node_roles = {type(subject_1.role), type(subject_2.role)}
+            self.assertIn(Leader, node_roles)
+
+        await self.eventually(assertion)
 
     async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
         subject = create_subject_node()
