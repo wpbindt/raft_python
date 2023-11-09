@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import random
+from abc import ABC, abstractmethod
 from logging import getLogger
 from typing import Callable, Generic
 
@@ -13,20 +14,38 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
 
 
-class Node(Generic[MessageType]):
+class INode(ABC, Generic[MessageType]):
+    @abstractmethod
+    async def request_vote(self) -> bool:
+        pass
+
+    @abstractmethod
+    def heartbeat(self) -> HeartbeatResponse:
+        pass
+
+    @abstractmethod
+    async def send_message(self, message: MessageType) -> None:
+        pass
+
+    @abstractmethod
+    async def get_messages(self) -> tuple[MessageType, ...]:
+        pass
+
+
+class Node(INode, Generic[MessageType]):
     def __init__(
         self,
         initial_role: Callable[[Node], Role],
     ) -> None:
         self._id = random.randint(0, 365)
         self._role = initial_role(self)
-        self._other_nodes: set[Node] = set()
+        self._other_nodes: set[INode] = set()
         self._messages: tuple[MessageType, ...] = tuple()
         self._message_box = MessageBox(
             distribution_strategy=self._role.get_distribution_strategy(),
         )
 
-    def register_node(self, node: Node) -> None:
+    def register_node(self, node: INode) -> None:
         if node != self:
             self._log(f'registering {node}')
             self._other_nodes.add(node)

@@ -6,7 +6,7 @@ from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.down import Down
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, INode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
@@ -18,7 +18,7 @@ class Subject(Role):
         self._beaten = False
         self._stopped = False
 
-    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
         self._stopped = False
         while not self._stopped:
             await cluster_configuration.election_timeout.wait()

@@ -7,7 +7,7 @@ import typing
 from quorum.cluster.configuration import ClusterConfiguration
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, INode
 from quorum.node.role.role import Role
 if typing.TYPE_CHECKING:
     from quorum.node.role.type_aliases import UpRole
@@ -19,7 +19,7 @@ class Down(Role):
         self._previous_role = previous_role
         self._node = previous_role.get_node()
 
-    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
         await asyncio.sleep(math.inf)
 
     def get_node(self) -> Node:

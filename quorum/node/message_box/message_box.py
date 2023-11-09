@@ -7,7 +7,7 @@ from quorum.cluster.message_type import MessageType
 from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy, DistributionFailed
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, INode
 
 
 class MessageBox(Generic[MessageType]):
@@ -22,7 +22,7 @@ class MessageBox(Generic[MessageType]):
     async def get_messages(self) -> tuple[MessageType, ...]:
         return self._messages
 
-    async def run(self, other_nodes: set[Node[MessageType]]) -> NoReturn:
+    async def run(self, other_nodes: set[INode[MessageType]]) -> NoReturn:
         while True:
             message = await self._waiting_messages.get()
             response = await self.distribution_strategy.distribute(message, other_nodes)

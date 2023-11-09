@@ -7,7 +7,7 @@ from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.down import Down
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, INode
     from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
@@ -18,7 +18,7 @@ class Leader(Role):
         self._stopped = False
         self._node = node
 
-    async def run(self, other_nodes: set[Node], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
         self._stopped = False
         while not self._stopped:
             for node in other_nodes:
