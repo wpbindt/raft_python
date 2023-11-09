@@ -3,14 +3,13 @@ from __future__ import annotations
 import asyncio
 import random
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Generic, Any
-from uuid import UUID
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
 from quorum.node.message_box.message_box import MessageBox
-from quorum.node.role.down import Down
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
 
@@ -122,6 +121,13 @@ class Node(INode, Generic[MessageType]):
         return await self._message_box.get_messages()
 
 
+
+
+@dataclass(frozen=True)
+class NodeIsDown:
+    pass
+
+
 class DownableNode(INode, Generic[MessageType]):
     def __init__(self, node: Node[MessageType]) -> None:
         self._actual_node = node
@@ -154,9 +160,9 @@ class DownableNode(INode, Generic[MessageType]):
         return await self._actual_node.get_messages()
 
     @property
-    def role(self) -> Role:
+    def role(self) -> Role | NodeIsDown:
         if self._down:
-            return Down(self._actual_node.role)
+            return NodeIsDown()
         return self._actual_node.role
 
     async def take_down(self) -> None:
