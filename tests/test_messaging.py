@@ -89,6 +89,20 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
         await self.eventually(self.assert_message_in_cluster, cluster, 'Fries')
 
+    async def test_only_remember_messages_when_consensus_reached(self) -> None:
+        initial_leader = create_leader_node()
+        subject = create_subject_node()
+        cluster = await get_running_cluster({
+            initial_leader,
+            subject,
+        })
+        await subject.take_down()
+
+        await cluster.send_message('Milkshake')
+        await asyncio.sleep(0.1)  # give leader time to try to distribute message
+
+        await self.remains_true(self.assert_no_messages_in_cluster, cluster)
+
     async def eventually(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
         for _ in range(34):
             with suppress(AssertionError):
@@ -96,3 +110,8 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
                 return
             await asyncio.sleep(0.03)
         await assertion(*args)
+
+    async def remains_true(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
+        for _ in range(34):
+            await assertion(*args)
+            await asyncio.sleep(0.03)
