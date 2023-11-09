@@ -19,14 +19,12 @@ class Subject(Role):
         self._stopped = False
 
     async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
-        self._stopped = False
-        while not self._stopped:
-            await cluster_configuration.election_timeout.wait()
-            if self._stopped:
-                return
-            if not self._beaten:
-                self._node.change_role(Candidate(self._node))
-            self._beaten = False
+        await cluster_configuration.election_timeout.wait()
+        if self._stopped:
+            return
+        if not self._beaten:
+            self._node.change_role(Candidate(self._node))
+        self._beaten = False
 
     def get_node(self) -> Node:
         return self._node
