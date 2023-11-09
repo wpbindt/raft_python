@@ -121,8 +121,6 @@ class Node(INode, Generic[MessageType]):
         return await self._message_box.get_messages()
 
 
-
-
 @dataclass(frozen=True)
 class NodeIsDown:
     pass

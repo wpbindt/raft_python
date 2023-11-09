@@ -6,7 +6,7 @@ from typing import Awaitable, Callable, Any
 
 from quorum.cluster.cluster import Cluster, NoLeaderInCluster
 from quorum.cluster.configuration import ElectionTimeout
-from quorum.node.node import Node
+from quorum.node.node import Node, DownableNode
 from tests.fixtures import get_running_cluster, create_leader_node, get_frozen_cluster, create_candidate_node, \
     create_subject_node
 
@@ -57,11 +57,15 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_messages_get_distributed_to_other_nodes(self) -> None:
         initial_leader = create_leader_node()
-        cluster = await get_running_cluster({
-            initial_leader,
-            create_subject_node(),
-            create_subject_node(),
-        })
+        cluster = await get_running_cluster(
+            nodes={
+                initial_leader,
+                create_subject_node(),
+                create_subject_node(),
+            },
+            election_timeout=ElectionTimeout(min_timeout=timedelta(seconds=0.5), max_timeout=timedelta(seconds=0.8)),
+            heartbeat_period=timedelta(seconds=0.01),
+        )
 
         await cluster.send_message('Milkshake')
         await asyncio.sleep(0.1)  # give leader time to distribute message
@@ -121,5 +125,5 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         for _ in range(50):
             await asyncio.sleep(0.1)
             leader = cluster.take_me_to_a_leader()
-            if isinstance(leader, Node):
+            if isinstance(leader, DownableNode):
                 return
