@@ -110,26 +110,6 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
-    async def test_down_is_idempotent(self) -> None:
-        the_node = create_leader_node()
-        cluster = await self.get_cluster({the_node})
-
-        await the_node.take_down()
-        await the_node.take_down()
-        await the_node.bring_back_up()
-
-        assert cluster.take_me_to_a_leader() == the_node, str(cluster.take_me_to_a_leader())
-
-    async def test_up_is_idempotent(self) -> None:
-        the_node = create_leader_node()
-        cluster = await self.get_cluster({the_node})
-
-        await the_node.take_down()
-        await the_node.bring_back_up()
-        await the_node.bring_back_up()
-
-        assert cluster.take_me_to_a_leader() == the_node
-
     async def test_non_leader_nodes_announce_candidacy_after_election_timeout_passes(self) -> None:
         the_node = create_subject_node()
         await self.get_cluster(

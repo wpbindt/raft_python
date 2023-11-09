@@ -19,13 +19,13 @@ class Leader(Role):
         self._node = node
 
     async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
-        self._stopped = False
-        while not self._stopped:
-            for node in other_nodes:
-                node.heartbeat()
+        for node in other_nodes:
             if self._stopped:
                 return
-            await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
+            node.heartbeat()
+        if self._stopped:
+            return
+        await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
 
     def get_node(self) -> Node:
         return self._node
@@ -42,7 +42,7 @@ class Leader(Role):
         self._node.change_role(Down(previous_role=self))
 
     async def bring_back_up(self) -> None:
-        pass
+        self._stopped = False
 
     async def request_vote(self) -> bool:
         from quorum.node.role.subject import Subject
