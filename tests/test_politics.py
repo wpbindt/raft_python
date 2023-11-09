@@ -9,7 +9,7 @@ from typing import Type, Callable
 
 from quorum.cluster.cluster import NoLeaderInCluster, TooManyLeaders
 from quorum.cluster.configuration import ElectionTimeout
-from quorum.node.node import Node
+from quorum.node.node import Node, DownableNode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
@@ -18,19 +18,19 @@ from tests.fixtures import get_running_cluster, create_subject_node, create_lead
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
-    def _assert_role_has_type(self, node: Node, role_type: Type[Role] | tuple[Type[Role], ...]) -> None:
+    def _assert_role_has_type(self, node: DownableNode, role_type: Type[Role] | tuple[Type[Role], ...]) -> None:
         self.assertIsInstance(node.role, role_type)
 
-    def assert_is_candidate(self, node: Node) -> None:
+    def assert_is_candidate(self, node: DownableNode) -> None:
         self._assert_role_has_type(node, Candidate)
 
-    def assert_is_subject(self, node: Node) -> None:
+    def assert_is_subject(self, node: DownableNode) -> None:
         self._assert_role_has_type(node, Subject)
 
-    def assert_is_not_subject(self, node: Node) -> None:
+    def assert_is_not_subject(self, node: DownableNode) -> None:
         self._assert_role_has_type(node, (Candidate, Leader))
 
-    def assert_is_leader(self, node: Node) -> None:
+    def assert_is_leader(self, node: DownableNode) -> None:
         self._assert_role_has_type(node, Leader)
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:

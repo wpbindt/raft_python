@@ -5,7 +5,7 @@ from typing import Generic
 
 from quorum.cluster.message_type import MessageType
 from quorum.node.role.leader import Leader
-from quorum.node.node import Node
+from quorum.node.node import Node, DownableNode
 from quorum.cluster.configuration import ClusterConfiguration
 
 
@@ -17,13 +17,13 @@ class NoLeaderInCluster:
 class Cluster(Generic[MessageType]):
     def __init__(
         self,
-        nodes: set[Node[MessageType]],
+        nodes: set[Node[MessageType]] | set[DownableNode[MessageType]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         self._set_up_logger()
 
         self._configuration = cluster_configuration
-        self._nodes = list(nodes)
+        self._nodes: list[Node[MessageType] | DownableNode[MessageType]] = list(nodes)
 
         self._let_nodes_know_of_each_others_existence()
 
@@ -52,7 +52,7 @@ class Cluster(Generic[MessageType]):
             return NoLeaderInCluster()
         return await maybe_leader.get_messages()
 
-    def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
+    def take_me_to_a_leader(self) -> Node[MessageType] | DownableNode[MessageType] | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
         if len(current_leaders) == 0:
             return NoLeaderInCluster()
