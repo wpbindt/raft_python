@@ -43,7 +43,7 @@ class Candidate(Role):
     def stop_running(self) -> None:
         pass
 
-    async def request_vote(self) -> bool:
+    def request_vote(self) -> bool:
         return False
 
     def __str__(self) -> str:

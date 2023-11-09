@@ -21,7 +21,7 @@ class Leader(Role):
         for node in other_nodes:
             if self._stopped:
                 return
-            node.heartbeat()
+            await node.heartbeat()
         if self._stopped:
             return
         await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
@@ -37,7 +37,7 @@ class Leader(Role):
     def stop_running(self) -> None:
         self._stopped = True
 
-    async def request_vote(self) -> bool:
+    def request_vote(self) -> bool:
         from quorum.node.role.subject import Subject
         self._node.change_role(Subject(self._node))
         return True

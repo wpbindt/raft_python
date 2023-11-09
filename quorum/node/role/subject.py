@@ -35,7 +35,7 @@ class Subject(Role):
     def stop_running(self) -> None:
         self._stopped = True
 
-    async def request_vote(self) -> bool:
+    def request_vote(self) -> bool:
         return True
 
     def __str__(self) -> str:

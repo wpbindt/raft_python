@@ -27,7 +27,7 @@ class Role(ABC):
         pass
 
     @abstractmethod
-    async def request_vote(self) -> bool:
+    def request_vote(self) -> bool:
         pass
 
     def get_distribution_strategy(self) -> DistributionStrategy:

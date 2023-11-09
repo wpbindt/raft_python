@@ -24,7 +24,7 @@ class INode(ABC, Generic[MessageType]):
         pass
 
     @abstractmethod
-    def heartbeat(self) -> HeartbeatResponse:
+    async def heartbeat(self) -> HeartbeatResponse:
         pass
 
     @abstractmethod
@@ -89,7 +89,7 @@ class Node(INode, Generic[MessageType]):
         self._running_task_lock.release()
 
     async def request_vote(self) -> bool:
-        vote = await self._role.request_vote()
+        vote = self._role.request_vote()
         self._log(f'voting {vote}')
         return vote
 
@@ -103,7 +103,7 @@ class Node(INode, Generic[MessageType]):
                     cluster_configuration=cluster_configuration,
                 )
 
-    def heartbeat(self) -> HeartbeatResponse:
+    async def heartbeat(self) -> HeartbeatResponse:
         self._log('receiving heartbeat')
         return self._role.heartbeat()
 
@@ -142,10 +142,10 @@ class DownableNode(INode, Generic[MessageType]):
             return False
         return await self._actual_node.request_vote()
 
-    def heartbeat(self) -> HeartbeatResponse:
+    async def heartbeat(self) -> HeartbeatResponse:
         if self._down:
             return HeartbeatResponse()
-        return self._actual_node.heartbeat()
+        return await self._actual_node.heartbeat()
 
     async def send_message(self, message: MessageType) -> None:
         if self._down:
