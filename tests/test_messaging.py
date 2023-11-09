@@ -1,6 +1,7 @@
 import unittest
 
-from tests.fixtures import get_running_cluster, create_leader_node
+from tests.fixtures import get_running_cluster, create_leader_node, get_frozen_cluster, create_candidate_node, \
+    create_subject_node
 
 
 class TestMessaging(unittest.IsolatedAsyncioTestCase):
@@ -16,11 +17,13 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
         self.assertTupleEqual(await cluster.get_messages(), ('Milkshake',))
 
-    async def test_down_nodes_do_not_take_messages(self) -> None:
-        node = create_leader_node()
-        cluster = await get_running_cluster({node})
-        await node.take_down()
+    async def test_non_leader_nodes_do_not_take_messages(self) -> None:
+        down_node = create_leader_node()
+        await down_node.take_down()
+        for node in {create_subject_node(), create_candidate_node(), down_node}:
+            with self.subTest(node.role.__class__.__name__):
+                cluster = get_frozen_cluster({node})
 
-        await cluster.send_message('Milkshake')
+                await cluster.send_message('Milkshake')
 
-        self.assertTupleEqual(await cluster.get_messages(), tuple())
+                self.assertTupleEqual(await cluster.get_messages(), tuple())
