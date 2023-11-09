@@ -6,6 +6,7 @@ from typing import Awaitable, Callable, Any
 
 from quorum.cluster.cluster import Cluster, NoLeaderInCluster
 from quorum.cluster.configuration import ElectionTimeout
+from quorum.node.node import Node
 from tests.fixtures import get_running_cluster, create_leader_node, get_frozen_cluster, create_candidate_node, \
     create_subject_node
 
@@ -32,7 +33,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
         await cluster.send_message('Milkshake')
 
-        await self.assert_message_in_cluster(cluster, 'Milkshake')
+        await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
 
     async def test_leader_down_means_no_messages(self) -> None:
         node = create_leader_node()
@@ -83,7 +84,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         await cluster.send_message('Milkshake')
         await asyncio.sleep(0.1)  # give leader time to distribute message
         await initial_leader.take_down()
-        await asyncio.sleep(0.5)  # wait for election
+        await self.wait_for_leader(cluster)
         await cluster.send_message('Fries')
 
         await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
@@ -114,3 +115,10 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         for _ in range(34):
             await assertion(*args)
             await asyncio.sleep(0.03)
+
+    async def wait_for_leader(self, cluster) -> None:
+        for _ in range(20):
+            await asyncio.sleep(0.1)
+            leader = cluster.take_me_to_a_leader()
+            if isinstance(leader, Node):
+                return
