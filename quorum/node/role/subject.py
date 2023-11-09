@@ -3,7 +3,6 @@ from __future__ import annotations
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
-from quorum.node.role.down import Down
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node, INode
@@ -35,12 +34,6 @@ class Subject(Role):
 
     def stop_running(self) -> None:
         self._stopped = True
-
-    async def take_down(self) -> None:
-        self._node.change_role(Down(previous_role=self))
-
-    async def bring_back_up(self) -> None:
-        pass
 
     async def request_vote(self) -> bool:
         return True

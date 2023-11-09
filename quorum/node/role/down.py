@@ -31,13 +31,6 @@ class Down(Role):
     def stop_running(self) -> None:
         pass
 
-    async def take_down(self) -> None:
-        pass
-
-    async def bring_back_up(self) -> None:
-        self._node.change_role(self._previous_role)
-        await self._previous_role.unpause()
-
     async def request_vote(self) -> bool:
         return False
 

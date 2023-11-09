@@ -27,14 +27,6 @@ class Role(ABC):
         pass
 
     @abstractmethod
-    async def take_down(self) -> None:
-        pass
-
-    @abstractmethod
-    async def bring_back_up(self) -> None:
-        pass
-
-    @abstractmethod
     async def request_vote(self) -> bool:
         pass
 
