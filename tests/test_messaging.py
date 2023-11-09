@@ -10,7 +10,9 @@ from tests.fixtures import get_running_cluster, create_leader_node, get_frozen_c
 
 class TestMessaging(unittest.IsolatedAsyncioTestCase):
     async def assert_message_in_cluster(self, cluster: Cluster[str], message: str) -> None:
-        self.assertIn(message, await cluster.get_messages())
+        messages = await cluster.get_messages()
+        self.assertIsInstance(messages, tuple)
+        self.assertIn(message, messages)
 
     async def test_that_no_messages_sent_means_no_messages_returned(self) -> None:
         cluster = await get_running_cluster({create_leader_node()})
@@ -44,7 +46,6 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
                 self.assertEqual(await cluster.get_messages(), NoLeaderInCluster())
 
-    @unittest.skip('later')
     async def test_that_messages_get_distributed_to_other_nodes(self) -> None:
         initial_leader = create_leader_node()
         cluster = await get_running_cluster({
@@ -54,6 +55,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         })
 
         await cluster.send_message('Milkshake')
+        await asyncio.sleep(0.1)  # give leader time to distribute message
         await initial_leader.take_down()
 
         await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
@@ -64,4 +66,4 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
                 await assertion(*args)
                 return
             await asyncio.sleep(0.03)
-        assertion(*args)
+        await assertion(*args)
