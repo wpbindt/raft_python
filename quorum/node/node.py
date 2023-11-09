@@ -19,7 +19,7 @@ class Node(Generic[MessageType]):
         self._id = random.randint(0, 365)
         self._role = initial_role(self)
         self._other_nodes: set[Node] = set()
-        self._messages: tuple[MessageType] = tuple()
+        self._messages: tuple[MessageType, ...] = tuple()
 
     def register_node(self, node: Node) -> None:
         if node != self:
@@ -72,5 +72,5 @@ class Node(Generic[MessageType]):
             return
         self._messages = (*self._messages, message)
 
-    async def get_messages(self) -> tuple[MessageType]:
+    async def get_messages(self) -> tuple[MessageType, ...]:
         return self._messages

@@ -27,7 +27,7 @@ async def randomly_take_stuff_down(nodes: set[Node]) -> NoReturn:
 
 
 async def main() -> NoReturn:
-    nodes = {
+    nodes: set[Node[str]] = {
         Node(lambda node: Subject(node))
         for _ in range(5)
     }
