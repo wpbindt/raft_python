@@ -54,6 +54,7 @@ class Node(INode, Generic[MessageType]):
         self,
         initial_role: Callable[[Node], Role],
     ) -> None:
+        self._running_task_lock = asyncio.Lock()
         self._id = random.randint(0, 365)
         self._role = initial_role(self)
         self._other_nodes: set[INode] = set()
@@ -80,13 +81,13 @@ class Node(INode, Generic[MessageType]):
         self._role = new_role
         self._message_box.distribution_strategy = new_role.get_distribution_strategy()
 
-    async def take_down(self) -> None:
+    async def pause(self) -> None:
         self._log('going down')
-        await self._role.take_down()
+        await self._running_task_lock.acquire()
 
-    async def bring_back_up(self) -> None:
+    async def unpause(self) -> None:
         self._log('going back up')
-        await self._role.bring_back_up()
+        self._running_task_lock.release()
 
     async def request_vote(self) -> bool:
         vote = await self._role.request_vote()
@@ -96,11 +97,12 @@ class Node(INode, Generic[MessageType]):
     async def run(self, cluster_configuration: ClusterConfiguration) -> None:
         asyncio.create_task(self._message_box.run(self._other_nodes))
         while True:
-            self._log('starting new run iteration')
-            await self._role.run(
-                other_nodes=self._other_nodes,
-                cluster_configuration=cluster_configuration,
-            )
+            async with self._running_task_lock:
+                self._log('starting new run iteration')
+                await self._role.run(
+                    other_nodes=self._other_nodes,
+                    cluster_configuration=cluster_configuration,
+                )
 
     def heartbeat(self) -> HeartbeatResponse:
         self._log('receiving heartbeat')
@@ -114,8 +116,6 @@ class Node(INode, Generic[MessageType]):
         getLogger().debug(full_message)
 
     async def send_message(self, message: MessageType) -> None:
-        if isinstance(self._role, Down):
-            return
         await self._message_box.append(message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
@@ -125,6 +125,7 @@ class Node(INode, Generic[MessageType]):
 class DownableNode(INode, Generic[MessageType]):
     def __init__(self, node: Node[MessageType]) -> None:
         self._actual_node = node
+        self._down = False
 
     def get_id(self) -> int:
         return self._actual_node.get_id()
@@ -133,26 +134,38 @@ class DownableNode(INode, Generic[MessageType]):
         self._actual_node.register_node(node)
 
     async def request_vote(self) -> bool:
+        if self._down:
+            return False
         return await self._actual_node.request_vote()
 
     def heartbeat(self) -> HeartbeatResponse:
+        if self._down:
+            return HeartbeatResponse()
         return self._actual_node.heartbeat()
 
     async def send_message(self, message: MessageType) -> None:
+        if self._down:
+            return
         return await self._actual_node.send_message(message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
+        if self._down:
+            return tuple()
         return await self._actual_node.get_messages()
 
     @property
     def role(self) -> Role:
+        if self._down:
+            return Down(self._actual_node.role)
         return self._actual_node.role
 
     async def take_down(self) -> None:
-        await self._actual_node.take_down()
+        self._down = True
+        await self._actual_node.pause()
 
     async def bring_back_up(self) -> None:
-        await self._actual_node.bring_back_up()
+        self._down = False
+        await self._actual_node.unpause()
 
     async def run(self, cluster_configuration: ClusterConfiguration) -> None:
         await self._actual_node.run(cluster_configuration)

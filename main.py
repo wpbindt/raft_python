@@ -21,9 +21,9 @@ async def randomly_take_stuff_down(nodes: set[Node]) -> NoReturn:
     while True:
         await asyncio.sleep(1 + random.random())
         node = random.choice(list(node for node in nodes if isinstance(node.role, Leader)))
-        await node.take_down()
+        await node.pause()
         await asyncio.sleep(2 + random.random())
-        await node.bring_back_up()
+        await node.unpause()
 
 
 async def main() -> NoReturn:
