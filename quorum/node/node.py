@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import random
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from logging import getLogger
-from typing import Callable, Generic, NoReturn
+from typing import Callable, Generic
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
+from quorum.node.message_box.message_box import MessageBox
 from quorum.node.role.down import Down
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
@@ -82,56 +81,3 @@ class Node(Generic[MessageType]):
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         return await self._message_box.get_messages()
-
-
-@dataclass(frozen=True)
-class DistributionSuccessful:
-    pass
-
-
-@dataclass(frozen=True)
-class DistributionFailed:
-    pass
-
-
-class DistributionStrategy(ABC, Generic[MessageType]):
-    @abstractmethod
-    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionSuccessful | DistributionFailed:
-        pass
-
-
-class NoDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionSuccessful:
-        return DistributionSuccessful()
-
-
-class LeaderDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionFailed | DistributionSuccessful:
-        majority = (len(other_nodes | {self}) // 2) + 1
-        up_nodes = {node for node in other_nodes if not isinstance(node.role, Down)}
-        if len(up_nodes) + 1 < majority:
-            return DistributionFailed()
-        for node in other_nodes:
-            await node.send_message(message)
-        return DistributionSuccessful()
-
-
-class MessageBox(Generic[MessageType]):
-    def __init__(self, distribution_strategy: DistributionStrategy[MessageType]):
-        self._messages: tuple[MessageType, ...] = tuple()
-        self._waiting_messages: asyncio.Queue[MessageType] = asyncio.Queue()
-        self.distribution_strategy = distribution_strategy
-
-    async def append(self, message: MessageType) -> None:
-        await self._waiting_messages.put(message)
-
-    async def get_messages(self) -> tuple[MessageType, ...]:
-        return self._messages
-
-    async def run(self, other_nodes: set[Node[MessageType]]) -> NoReturn:
-        while True:
-            message = await self._waiting_messages.get()
-            response = await self.distribution_strategy.distribute(message, other_nodes)
-            if isinstance(response, DistributionFailed):
-                continue
-            self._messages = (*self._messages, message)
