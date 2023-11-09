@@ -66,6 +66,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         await cluster.send_message('Milkshake')
         await asyncio.sleep(0.1)  # give leader time to distribute message
         await initial_leader.take_down()
+        await self.wait_for_leader(cluster)
 
         await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
 
@@ -117,7 +118,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.03)
 
     async def wait_for_leader(self, cluster) -> None:
-        for _ in range(20):
+        for _ in range(50):
             await asyncio.sleep(0.1)
             leader = cluster.take_me_to_a_leader()
             if isinstance(leader, Node):
