@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import asyncio
 import random
+from abc import ABC, abstractmethod
 from logging import getLogger
-from typing import Callable, Generic
+from typing import Callable, Generic, NoReturn
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
@@ -20,6 +22,9 @@ class Node(Generic[MessageType]):
         self._role = initial_role(self)
         self._other_nodes: set[Node] = set()
         self._messages: tuple[MessageType, ...] = tuple()
+        self._message_box = MessageBox(
+            distribution_strategy=self._role.get_distribution_strategy(),
+        )
 
     def register_node(self, node: Node) -> None:
         if node != self:
@@ -34,6 +39,7 @@ class Node(Generic[MessageType]):
         self._log(f'changing role from {self._role} to {new_role}')
         self._role.stop_running()
         self._role = new_role
+        self._message_box.distribution_strategy = new_role.get_distribution_strategy()
 
     async def take_down(self) -> None:
         self._log('going down')
@@ -49,6 +55,7 @@ class Node(Generic[MessageType]):
         return vote
 
     async def run(self, cluster_configuration: ClusterConfiguration) -> None:
+        asyncio.create_task(self._message_box.run(self._other_nodes))
         while True:
             self._log('starting new run iteration')
             await self._role.run(
@@ -70,11 +77,43 @@ class Node(Generic[MessageType]):
     async def send_message(self, message: MessageType) -> None:
         if isinstance(self._role, Down):
             return
+        await self._message_box.append(message)
+
+    async def get_messages(self) -> tuple[MessageType, ...]:
+        return await self._message_box.get_messages()
+
+
+class DistributionStrategy(ABC, Generic[MessageType]):
+    @abstractmethod
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
+        pass
+
+
+class NoDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
+        pass
+
+
+class LeaderDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
+        for node in other_nodes:
+            await node.send_message(message)
+
+
+class MessageBox(Generic[MessageType]):
+    def __init__(self, distribution_strategy: DistributionStrategy[MessageType]):
+        self._messages: tuple[MessageType, ...] = tuple()
+        self._waiting_messages: asyncio.Queue[MessageType] = asyncio.Queue()
+        self.distribution_strategy = distribution_strategy
+
+    async def append(self, message: MessageType) -> None:
         self._messages = (*self._messages, message)
-        from quorum.node.role.leader import Leader
-        if isinstance(self._role, Leader):
-            for node in self._other_nodes:
-                await node.send_message(message)
+        await self._waiting_messages.put(message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         return self._messages
+
+    async def run(self, other_nodes: set[Node]) -> NoReturn:
+        while True:
+            message = await self._waiting_messages.get()
+            await self.distribution_strategy.distribute(message, other_nodes)

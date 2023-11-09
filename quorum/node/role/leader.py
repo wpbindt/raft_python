@@ -7,7 +7,7 @@ from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.down import Down
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, DistributionStrategy
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
@@ -50,3 +50,7 @@ class Leader(Role):
 
     def __str__(self) -> str:
         return 'leader'
+
+    def get_distribution_strategy(self) -> DistributionStrategy:
+        from quorum.node.node import LeaderDistribution
+        return LeaderDistribution()

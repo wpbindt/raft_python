@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node
+    from quorum.node.node import Node, DistributionStrategy
 
 
 class Role(ABC):
@@ -36,3 +36,7 @@ class Role(ABC):
     @abstractmethod
     async def request_vote(self) -> bool:
         pass
+
+    def get_distribution_strategy(self) -> DistributionStrategy:
+        from quorum.node.node import NoDistribution
+        return NoDistribution()
