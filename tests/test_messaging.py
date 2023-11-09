@@ -99,7 +99,6 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         await subject.take_down()
 
         await cluster.send_message('Milkshake')
-        await asyncio.sleep(0.1)  # give leader time to try to distribute message
 
         await self.remains_true(self.assert_no_messages_in_cluster, cluster)
 
