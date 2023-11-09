@@ -96,17 +96,17 @@ class DistributionFailed:
 
 class DistributionStrategy(ABC, Generic[MessageType]):
     @abstractmethod
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionSuccessful | DistributionFailed:
+    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionSuccessful | DistributionFailed:
         pass
 
 
 class NoDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionSuccessful:
+    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionSuccessful:
         return DistributionSuccessful()
 
 
 class LeaderDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionFailed | DistributionSuccessful:
+    async def distribute(self, message: MessageType, other_nodes: set[Node[MessageType]]) -> DistributionFailed | DistributionSuccessful:
         majority = (len(other_nodes | {self}) // 2) + 1
         up_nodes = {node for node in other_nodes if not isinstance(node.role, Down)}
         if len(up_nodes) + 1 < majority:
@@ -128,7 +128,7 @@ class MessageBox(Generic[MessageType]):
     async def get_messages(self) -> tuple[MessageType, ...]:
         return self._messages
 
-    async def run(self, other_nodes: set[Node]) -> NoReturn:
+    async def run(self, other_nodes: set[Node[MessageType]]) -> NoReturn:
         while True:
             message = await self._waiting_messages.get()
             response = await self.distribution_strategy.distribute(message, other_nodes)
