@@ -46,9 +46,11 @@ class Cluster(Generic[MessageType]):
             return
         await maybe_leader.send_message(message)
 
-    async def get_messages(self) -> tuple[MessageType, ...]:
-        node = next(iter(self._nodes))
-        return await node.get_messages()
+    async def get_messages(self) -> tuple[MessageType, ...] | NoLeaderInCluster:
+        maybe_leader = self.take_me_to_a_leader()
+        if isinstance(maybe_leader, NoLeaderInCluster):
+            return NoLeaderInCluster()
+        return await maybe_leader.get_messages()
 
     def take_me_to_a_leader(self) -> Node | NoLeaderInCluster:
         current_leaders = {node for node in self._nodes if isinstance(node.role, Leader)}
