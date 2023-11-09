@@ -149,6 +149,7 @@ class DownableNode(INode, Generic[MessageType]):
 
     async def send_message(self, message: MessageType) -> None:
         if self._down:
+            await asyncio.sleep(1)
             return
         return await self._actual_node.send_message(message)
 
