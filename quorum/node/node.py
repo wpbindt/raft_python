@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import random
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Generic, NoReturn
 
@@ -83,21 +84,36 @@ class Node(Generic[MessageType]):
         return await self._message_box.get_messages()
 
 
+@dataclass(frozen=True)
+class DistributionSuccessful:
+    pass
+
+
+@dataclass(frozen=True)
+class DistributionFailed:
+    pass
+
+
 class DistributionStrategy(ABC, Generic[MessageType]):
     @abstractmethod
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionSuccessful | DistributionFailed:
         pass
 
 
 class NoDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
-        pass
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionSuccessful:
+        return DistributionSuccessful()
 
 
 class LeaderDistribution(DistributionStrategy[MessageType], Generic[MessageType]):
-    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> None:
+    async def distribute(self, message: MessageType, other_nodes: set[Node]) -> DistributionFailed | DistributionSuccessful:
+        majority = (len(other_nodes | {self}) // 2) + 1
+        up_nodes = {node for node in other_nodes if not isinstance(node.role, Down)}
+        if len(up_nodes) + 1 < majority:
+            return DistributionFailed()
         for node in other_nodes:
             await node.send_message(message)
+        return DistributionSuccessful()
 
 
 class MessageBox(Generic[MessageType]):
@@ -107,7 +123,6 @@ class MessageBox(Generic[MessageType]):
         self.distribution_strategy = distribution_strategy
 
     async def append(self, message: MessageType) -> None:
-        self._messages = (*self._messages, message)
         await self._waiting_messages.put(message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
@@ -116,4 +131,7 @@ class MessageBox(Generic[MessageType]):
     async def run(self, other_nodes: set[Node]) -> NoReturn:
         while True:
             message = await self._waiting_messages.get()
-            await self.distribution_strategy.distribute(message, other_nodes)
+            response = await self.distribution_strategy.distribute(message, other_nodes)
+            if isinstance(response, DistributionFailed):
+                continue
+            self._messages = (*self._messages, message)
