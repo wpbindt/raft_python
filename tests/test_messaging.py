@@ -52,7 +52,6 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
 
                 self.assertEqual(await cluster.get_messages(), NoLeaderInCluster())
 
-    @unittest.skip('later')
     async def test_that_messages_get_distributed_to_other_nodes(self) -> None:
         initial_leader = create_leader_node()
         cluster = await get_running_cluster({

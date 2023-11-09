@@ -71,6 +71,10 @@ class Node(Generic[MessageType]):
         if isinstance(self._role, Down):
             return
         self._messages = (*self._messages, message)
+        from quorum.node.role.leader import Leader
+        if isinstance(self._role, Leader):
+            for node in self._other_nodes:
+                await node.send_message(message)
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         return self._messages
