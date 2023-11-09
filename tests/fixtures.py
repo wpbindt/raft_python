@@ -5,14 +5,14 @@ from datetime import timedelta
 
 from quorum.cluster.cluster import Cluster
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
-from quorum.node.node import Node
+from quorum.node.node import Node, DownableNode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.subject import Subject
 
 
 def get_frozen_cluster(
-    nodes: set[Node],
+    nodes: set[DownableNode],
     election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
     heartbeat_period: timedelta = timedelta(seconds=1),
 ) -> Cluster[str]:
@@ -26,7 +26,7 @@ def get_frozen_cluster(
 
 
 async def get_running_cluster(
-    nodes: set[Node],
+    nodes: set[DownableNode],
     election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
     heartbeat_period: timedelta = timedelta(seconds=1),
 ) -> Cluster[str]:
@@ -39,13 +39,13 @@ async def get_running_cluster(
     return cluster
 
 
-def create_subject_node() -> Node:
-    return Node(lambda node: Subject(node))
+def create_subject_node() -> DownableNode:
+    return DownableNode(Node(lambda node: Subject(node)))
 
 
-def create_leader_node() -> Node:
-    return Node(lambda node: Leader(node))
+def create_leader_node() -> DownableNode:
+    return DownableNode(Node(lambda node: Leader(node)))
 
 
-def create_candidate_node() -> Node:
-    return Node(lambda node: Candidate(node))
+def create_candidate_node() -> DownableNode:
+    return DownableNode(Node(lambda node: Candidate(node)))

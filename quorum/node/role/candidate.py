@@ -31,7 +31,7 @@ class Candidate(Role):
         self._node.change_role(Subject(self._node))
 
     async def _request_vote_from(self, node: INode) -> bool:
-        if node is self._node:
+        if node == self._node:
             return True
         return await node.request_vote()
 

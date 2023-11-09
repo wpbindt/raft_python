@@ -4,7 +4,8 @@ import asyncio
 import random
 from abc import ABC, abstractmethod
 from logging import getLogger
-from typing import Callable, Generic
+from typing import Callable, Generic, Any
+from uuid import UUID
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
@@ -15,6 +16,10 @@ from quorum.node.role.role import Role
 
 
 class INode(ABC, Generic[MessageType]):
+    @abstractmethod
+    def register_node(self, node: INode) -> None:
+        pass
+
     @abstractmethod
     async def request_vote(self) -> bool:
         pass
@@ -31,6 +36,18 @@ class INode(ABC, Generic[MessageType]):
     async def get_messages(self) -> tuple[MessageType, ...]:
         pass
 
+    @abstractmethod
+    def get_id(self) -> int:
+        pass
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, INode):
+            return False
+        return self.get_id() == other.get_id()
+
+    def __hash__(self) -> int:
+        return hash(self.get_id())
+
 
 class Node(INode, Generic[MessageType]):
     def __init__(
@@ -44,6 +61,9 @@ class Node(INode, Generic[MessageType]):
         self._message_box = MessageBox(
             distribution_strategy=self._role.get_distribution_strategy(),
         )
+
+    def get_id(self) -> int:
+        return self._id
 
     def register_node(self, node: INode) -> None:
         if node != self:
@@ -100,3 +120,39 @@ class Node(INode, Generic[MessageType]):
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         return await self._message_box.get_messages()
+
+
+class DownableNode(INode, Generic[MessageType]):
+    def __init__(self, node: Node[MessageType]) -> None:
+        self._actual_node = node
+
+    def get_id(self) -> int:
+        return self._actual_node.get_id()
+
+    def register_node(self, node: INode) -> None:
+        self._actual_node.register_node(node)
+
+    async def request_vote(self) -> bool:
+        return await self._actual_node.request_vote()
+
+    def heartbeat(self) -> HeartbeatResponse:
+        return self._actual_node.heartbeat()
+
+    async def send_message(self, message: MessageType) -> None:
+        return await self._actual_node.send_message(message)
+
+    async def get_messages(self) -> tuple[MessageType, ...]:
+        return await self._actual_node.get_messages()
+
+    @property
+    def role(self) -> Role:
+        return self._actual_node.role
+
+    async def take_down(self) -> None:
+        await self._actual_node.take_down()
+
+    async def bring_back_up(self) -> None:
+        await self._actual_node.bring_back_up()
+
+    async def run(self, cluster_configuration: ClusterConfiguration) -> None:
+        await self._actual_node.run(cluster_configuration)
