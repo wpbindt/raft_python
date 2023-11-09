@@ -1,9 +1,11 @@
 import asyncio
 import unittest
 from contextlib import suppress
+from datetime import timedelta
 from typing import Awaitable, Callable, Any
 
 from quorum.cluster.cluster import Cluster, NoLeaderInCluster
+from quorum.cluster.configuration import ElectionTimeout
 from tests.fixtures import get_running_cluster, create_leader_node, get_frozen_cluster, create_candidate_node, \
     create_subject_node
 
@@ -65,6 +67,27 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
         await initial_leader.take_down()
 
         await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
+
+    async def test_collective_memory(self) -> None:
+        initial_leader = create_leader_node()
+        cluster = await get_running_cluster(
+            nodes={
+                initial_leader,
+                create_subject_node(),
+                create_subject_node(),
+            },
+            election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.1), min_timeout=timedelta(seconds=0.1)),
+            heartbeat_period=timedelta(seconds=0.01),
+        )
+
+        await cluster.send_message('Milkshake')
+        await asyncio.sleep(0.1)  # give leader time to distribute message
+        await initial_leader.take_down()
+        await asyncio.sleep(0.2)  # wait for election
+        await cluster.send_message('Fries')
+
+        await self.eventually(self.assert_message_in_cluster, cluster, 'Milkshake')
+        await self.eventually(self.assert_message_in_cluster, cluster, 'Fries')
 
     async def eventually(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
         for _ in range(34):
