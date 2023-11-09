@@ -318,3 +318,22 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(len(leaders), 0)
 
         await self.remains_true(assertion)
+
+    async def test_that_all_candidates_eventually_stabilizes_to_one_leader(self) -> None:
+        nodes = {create_candidate_node() for _ in range(3)}
+        await self.get_cluster(
+            nodes=nodes,
+            election_timeout=ElectionTimeout(
+                max_timeout=timedelta(seconds=0.2),
+                min_timeout=timedelta(seconds=0.2)
+            ),
+            heartbeat_period=timedelta(seconds=0.03),
+        )
+
+        def assertion() -> None:
+            subjects = {node for node in nodes if isinstance(node.role, Subject)}
+            leaders = {node for node in nodes if isinstance(node.role, Leader)}
+            self.assertEqual(len(leaders), 1)
+            self.assertEqual(len(subjects), 2)
+
+        await self.eventually(assertion)
