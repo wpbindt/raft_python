@@ -47,10 +47,11 @@ class Candidate(Role):
 
     async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
         ballot_box = BallotBox(electorate=len(other_nodes | {self._node}))
-        asyncio.create_task(self._collect_votes(
-            electorate=other_nodes | {self._node},
-            ballot_box=ballot_box,
-        ))
+        for node in other_nodes | {self._node}:
+            asyncio.create_task(self._collect_vote_from(
+                ballot_box=ballot_box,
+                node=node
+            ))
 
         await ballot_box.wait_for_vote_conclusive()
         if ballot_box.majority_reached():
@@ -60,27 +61,15 @@ class Candidate(Role):
         from quorum.node.role.subject import Subject
         self._node.change_role(Subject(self._node))
 
-    async def _collect_votes(
-        self,
-        electorate: set[INode],
-        ballot_box: BallotBox,
-    ) -> None:
-        for node in electorate:
-            asyncio.create_task(self._collect_vote_from(
-                node=node,
-                ballot_box=ballot_box,
-            ))
-
     async def _collect_vote_from(
         self,
         node: INode,
         ballot_box: BallotBox,
     ) -> None:
         if node == self._node:
-            vote = True
+            ballot_box.vote(True)
         else:
-            vote = await node.request_vote()
-        ballot_box.vote(vote)
+            ballot_box.vote(await node.request_vote())
 
     def get_node(self) -> Node:
         return self._node
