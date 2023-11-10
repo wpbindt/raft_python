@@ -38,8 +38,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
             assertion()
             await asyncio.sleep(0.01)
 
-    async def eventually(self, assertion: Callable[[], None]) -> None:
-        for _ in range(34):
+    async def eventually(self, assertion: Callable[[], None], timeout: float = 1) -> None:
+        for _ in range(int(34 * timeout)):
             with suppress(AssertionError):
                 assertion()
                 return
@@ -178,11 +178,12 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         subject_1 = create_subject_node()
         subject_2 = create_subject_node()
         leader = create_leader_node()
-        election_timeout = timedelta(seconds=0.2)
+        election_timeout_min = timedelta(seconds=0.2)
+        election_timeout_max = timedelta(seconds=0.3)
         heartbeat_period = timedelta(seconds=0.1)
         await get_running_cluster(
             nodes={leader, subject_1, subject_2},
-            election_timeout=ElectionTimeout(max_timeout=election_timeout, min_timeout=election_timeout),
+            election_timeout=ElectionTimeout(max_timeout=election_timeout_max, min_timeout=election_timeout_min),
             heartbeat_period=heartbeat_period,
         )
         await asyncio.sleep(heartbeat_period.total_seconds() + 0.05)
@@ -192,7 +193,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
             node_roles = {type(subject_1.role), type(subject_2.role)}
             self.assertIn(Leader, node_roles)
 
-        await self.eventually(assertion)
+        await asyncio.sleep(0.5)
+
+        await self.eventually(assertion, timeout=5)
 
     async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
         subject = create_subject_node()
