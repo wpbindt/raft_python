@@ -28,15 +28,14 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         node = create_subject_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration())
 
-        server_task = asyncio.create_task(server.run('localhost', 8080))
+        server_task = asyncio.create_task(server.run(8080))
 
         await asyncio.sleep(0.5)
 
         self.assertIsInstance(node.role, (Candidate, Leader))
         server_task.cancel()
-        await server_task
 
-    async def send_heartbeat(self, host: str, port: int) -> None:
+    async def send_heartbeat(self, port: int) -> None:
         async with httpx.AsyncClient() as client:
             await client.post(f'http://localhost:{port}/heartbeat')
 
@@ -45,16 +44,19 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=0.2)))
 
         server_task = asyncio.create_task(server.run(8080))
+        await asyncio.sleep(2)
 
         async def send_many_heartbeats() -> None:
             for _ in range(100):
-                await self.send_heartbeat(host='localhost', port=8080)
+                await self.send_heartbeat(port=8080)
                 await asyncio.sleep(0.01)
 
-        asyncio.create_task(send_many_heartbeats())
+        heartbeat_task = asyncio.create_task(send_many_heartbeats())
 
         await asyncio.sleep(0.7)
 
         self.assertIsInstance(node.role, Subject)
 
+        heartbeat_task.cancel()
         server_task.cancel()
+        await asyncio.sleep(2)
