@@ -14,30 +14,29 @@ from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 class BallotBox:
     def __init__(self, electorate: int) -> None:
-        self._votes: list[None | bool] = electorate * [None]
-        self._current_vote_index = 0
+        self._votes: list[bool] = []
+        self._electorate = electorate
         self._vote_conclusive_event = asyncio.Event()
 
     def vote(self, vote: bool) -> None:
-        self._votes[self._current_vote_index] = vote
-        self._current_vote_index += 1
+        self._votes.append(vote)
         if self._is_conclusive():
             self._vote_conclusive_event.set()
 
     @property
     def _majority(self) -> int:
-        return (len(self._votes) // 2) + 1
+        return (self._electorate // 2) + 1
 
     async def wait_for_vote_conclusive(self) -> None:
         await self._vote_conclusive_event.wait()
 
     def _is_conclusive(self) -> bool:
-        ayes = [vote for vote in self._votes if vote is True]
-        nays = [vote for vote in self._votes if vote is False]
+        ayes = [vote for vote in self._votes if vote]
+        nays = [vote for vote in self._votes if not vote]
         return len(ayes) >= self._majority or len(nays) >= self._majority
 
     def majority_reached(self) -> bool:
-        ayes = [vote for vote in self._votes if vote is True]
+        ayes = [vote for vote in self._votes if vote]
         return len(ayes) >= self._majority
 
 
