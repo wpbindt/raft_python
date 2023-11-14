@@ -78,3 +78,16 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(vote)
         server_task.cancel()
         await asyncio.sleep(2)
+
+    async def test_request_vote_when_already_voted(self) -> None:
+        node = create_subject_node()
+        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
+
+        await node.request_vote()
+        server_task = asyncio.create_task(server.run(8080))
+
+        vote = await self.request_vote(port=8080)
+
+        self.assertFalse(vote)
+        server_task.cancel()
+        await asyncio.sleep(2)
