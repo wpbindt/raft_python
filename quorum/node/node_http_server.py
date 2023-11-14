@@ -1,13 +1,11 @@
 import asyncio
-import math
-from datetime import timedelta
 
 from fastapi import FastAPI
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from uvicorn import Server, Config
 
-from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
+from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.node import Node
 
 
@@ -28,6 +26,11 @@ class NodeServer:
             route=self.heartbeat,
             methods=['POST']
         )
+        app.add_route(
+            path='/request_vote',
+            route=self.request_vote,
+            methods=['POST']
+        )
         server = Server(config=Config(host='0.0.0.0', port=port, app=app))
 
         try:
@@ -39,3 +42,6 @@ class NodeServer:
     async def heartbeat(self, request: Request) -> JSONResponse:
         await self._node.heartbeat()
         return JSONResponse(status_code=200, content='')
+
+    async def request_vote(self, request: Request) -> JSONResponse:
+        return JSONResponse(status_code=200, content={'vote': True})

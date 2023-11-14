@@ -60,3 +60,21 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         heartbeat_task.cancel()
         server_task.cancel()
         await asyncio.sleep(2)
+
+    async def request_vote(self, port: int) -> bool:
+        async with httpx.AsyncClient() as client:
+            response: httpx.Response = await client.post(f'http://localhost:{port}/request_vote')
+        response.raise_for_status()
+        return response.json()['vote']
+
+    async def test_request_vote(self) -> None:
+        node = create_subject_node()
+        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
+
+        server_task = asyncio.create_task(server.run(8080))
+
+        vote = await self.request_vote(port=8080)
+
+        self.assertTrue(vote)
+        server_task.cancel()
+        await asyncio.sleep(2)
