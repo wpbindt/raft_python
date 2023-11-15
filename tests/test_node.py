@@ -4,17 +4,15 @@ import asyncio
 import unittest
 from contextlib import suppress
 from datetime import timedelta
-from itertools import cycle
 from typing import Type, Callable
 
-from quorum.cluster.cluster import NoLeaderInCluster, TooManyLeaders
-from quorum.cluster.configuration import ElectionTimeout
+from quorum.cluster.configuration import ElectionTimeout, ClusterConfiguration
 from quorum.node.node import DownableNode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
-from tests.fixtures import get_running_cluster, create_subject_node, create_leader_node, create_candidate_node
+from tests.fixtures import create_subject_node
 
 
 class TestNode(unittest.IsolatedAsyncioTestCase):
@@ -46,11 +44,6 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
             await asyncio.sleep(0.03)
         assertion()
 
-    async def test_empty_clusters_have_no_leader(self) -> None:
-        cluster = await get_running_cluster(nodes=set())
-
-        assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
-
     async def test_requesting_vote_twice_yields_nay(self) -> None:
         the_node = create_subject_node()
 
@@ -67,3 +60,18 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         vote2 = await the_node.request_vote()
 
         self.assertTrue(vote2)
+
+    async def test_subject_who_feels_no_heartbeat_becomes_leader(self) -> None:
+        the_node = create_subject_node()
+
+        asyncio.create_task(the_node.run(
+            ClusterConfiguration(
+                election_timeout=ElectionTimeout(max_timeout=timedelta(seconds=0.1), min_timeout=timedelta(seconds=0.05)),
+                heartbeat_period=timedelta(seconds=0.01)
+            ))
+        )
+
+        def assertion():
+            assert isinstance(the_node.role, Leader)
+
+        await self.eventually(assertion)
