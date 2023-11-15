@@ -16,6 +16,7 @@ class Subject(Role):
         self._node = node
         self._beaten = False
         self._stopped = False
+        self._voted = False
 
     async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
         await cluster_configuration.election_timeout.wait()
@@ -36,7 +37,9 @@ class Subject(Role):
         self._stopped = True
 
     def request_vote(self) -> bool:
-        return True
+        vote = not self._voted
+        self._voted = True
+        return vote
 
     def __str__(self) -> str:
         return 'subject'
