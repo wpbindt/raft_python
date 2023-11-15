@@ -31,6 +31,7 @@ class Subject(Role):
 
     def heartbeat(self) -> HeartbeatResponse:
         self._beaten = True
+        self._voted = False
         return HeartbeatResponse()
 
     def stop_running(self) -> None:

@@ -78,7 +78,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         server_task.cancel()
         await asyncio.sleep(2)
 
-    @unittest.skip('later')
     async def test_request_vote_when_already_voted(self) -> None:
         node = create_subject_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))

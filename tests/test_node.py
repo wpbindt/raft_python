@@ -58,3 +58,12 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         vote2 = await the_node.request_vote()
 
         self.assertFalse(vote2)
+
+    async def test_new_heartbeat_means_vote_again(self) -> None:
+        the_node = create_subject_node()
+
+        await the_node.request_vote()
+        await the_node.heartbeat()
+        vote2 = await the_node.request_vote()
+
+        self.assertTrue(vote2)

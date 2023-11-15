@@ -297,7 +297,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await get_running_cluster(
             nodes=nodes,
             election_timeout=ElectionTimeout(
-                max_timeout=timedelta(seconds=0.2),
+                max_timeout=timedelta(seconds=0.3),
                 min_timeout=timedelta(seconds=0.2)
             ),
             heartbeat_period=timedelta(seconds=0.03),

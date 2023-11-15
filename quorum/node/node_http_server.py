@@ -44,4 +44,5 @@ class NodeServer:
         return JSONResponse(status_code=200, content='')
 
     async def request_vote(self, request: Request) -> JSONResponse:
-        return JSONResponse(status_code=200, content={'vote': True})
+        vote = await self._node.request_vote()
+        return JSONResponse(status_code=200, content={'vote': vote})
