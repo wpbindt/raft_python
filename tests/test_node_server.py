@@ -38,6 +38,10 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         async with httpx.AsyncClient() as client:
             await client.post(f'http://localhost:{port}/heartbeat')
 
+    async def send_message(self, port: int, message: str) -> None:
+        async with httpx.AsyncClient() as client:
+            await client.post(f'http://localhost:{port}/send_message', data={'message', message})
+
     async def test_sending_heartbeat(self) -> None:
         node = create_subject_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=0.2)))
@@ -90,3 +94,18 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(vote)
         server_task.cancel()
         await asyncio.sleep(2)
+
+    async def test_send_and_get_messages(self) -> None:
+        node = create_subject_node()
+        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
+
+        await node.request_vote()
+        server_task = asyncio.create_task(server.run(8080))
+
+        await self.send_message(8080, 'hi')
+        messages = await self.get_messages(8080)
+
+        self.assertTupleEqual(messages, ('hi',))
+
+    async def get_messages(self, port: int) -> tuple[str, ...]:
+        raise NotImplementedError
