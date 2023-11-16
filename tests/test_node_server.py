@@ -2,7 +2,7 @@ import asyncio
 import unittest
 from datetime import timedelta
 
-import httpx
+import aiohttp
 
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
 from quorum.node.node_http_server import NodeServer
@@ -35,11 +35,11 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         server_task.cancel()
 
     async def send_heartbeat(self, port: int) -> None:
-        async with httpx.AsyncClient() as client:
+        async with aiohttp.ClientSession() as client:
             await client.post(f'http://localhost:{port}/heartbeat')
 
     async def send_message(self, port: int, message: str) -> None:
-        async with httpx.AsyncClient() as client:
+        async with aiohttp.ClientSession() as client:
             await client.post(f'http://localhost:{port}/send_message', data={'message', message})
 
     async def test_sending_heartbeat(self) -> None:
@@ -47,7 +47,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=0.2)))
 
         server_task = asyncio.create_task(server.run(8080))
-        await asyncio.sleep(2)
+        await asyncio.sleep(0.5)
 
         async def send_many_heartbeats() -> None:
             for _ in range(100):
@@ -65,16 +65,18 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(2)
 
     async def request_vote(self, port: int) -> bool:
-        async with httpx.AsyncClient() as client:
-            response: httpx.Response = await client.post(f'http://localhost:{port}/request_vote')
-        response.raise_for_status()
-        return response.json()['vote']
+        async with aiohttp.ClientSession() as client:
+            response = await client.post(f'http://localhost:{port}/request_vote')
+            response.raise_for_status()
+            response_data = await response.json()
+        return response_data['vote']
 
     async def test_request_vote(self) -> None:
         node = create_subject_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
 
         server_task = asyncio.create_task(server.run(8080))
+        await asyncio.sleep(0.5)
 
         vote = await self.request_vote(port=8080)
 
@@ -88,6 +90,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
         await node.request_vote()
         server_task = asyncio.create_task(server.run(8080))
+        await asyncio.sleep(0.5)
 
         vote = await self.request_vote(port=8080)
 
@@ -101,11 +104,18 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
         await node.request_vote()
         server_task = asyncio.create_task(server.run(8080))
+        await asyncio.sleep(0.5)
 
         await self.send_message(8080, 'hi')
         messages = await self.get_messages(8080)
 
         self.assertTupleEqual(messages, ('hi',))
+        server_task.cancel()
+        await asyncio.sleep(2)
 
     async def get_messages(self, port: int) -> tuple[str, ...]:
-        raise NotImplementedError
+        async with aiohttp.ClientSession() as client:
+            response = await client.get(f'http://localhost:{port}/get_messages')
+            response.raise_for_status()
+            response_data = await response.json()
+        return tuple(response_data['messages'])

@@ -4,7 +4,7 @@ import asyncio
 import unittest
 from contextlib import suppress
 from datetime import timedelta
-from itertools import cycle, repeat
+from itertools import cycle
 from typing import Type, Callable
 
 from quorum.cluster.cluster import NoLeaderInCluster, TooManyLeaders
