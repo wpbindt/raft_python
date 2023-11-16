@@ -1,17 +1,12 @@
 import asyncio
 
 from fastapi import FastAPI
-from pydantic import BaseModel
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from uvicorn import Server, Config
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.node import Node
-
-
-class Message(BaseModel):
-    message: str
 
 
 class NodeServer:

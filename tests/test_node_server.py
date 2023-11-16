@@ -105,7 +105,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
     async def test_send_and_get_messages(self) -> None:
         node = create_leader_node()
-        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
+        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration())
 
         await node.request_vote()
         server_task = asyncio.create_task(server.run(8080))
