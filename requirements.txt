@@ -1,4 +1,4 @@
 aiohttp==3.8.6
-fastapi==0.104.1
+starlette==0.32.0.post1
 mypy==1.6.1
 uvicorn==0.24.0.post1

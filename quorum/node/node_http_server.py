@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import FastAPI
+from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 from uvicorn import Server, Config
@@ -20,7 +20,7 @@ class NodeServer:
 
     async def run(self, port: int) -> None:
         asyncio.create_task(self._node.run(self._cluster_configuration))
-        app = FastAPI()
+        app = Starlette()
         app.add_route(
             path='/heartbeat',
             route=self.heartbeat,
