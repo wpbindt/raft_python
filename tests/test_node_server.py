@@ -47,7 +47,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             )
             response.raise_for_status()
 
-
     async def test_sending_heartbeat(self) -> None:
         node = create_subject_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=0.2)))
