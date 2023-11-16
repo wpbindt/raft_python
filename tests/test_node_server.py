@@ -9,7 +9,7 @@ from quorum.node.node_http_server import NodeServer
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.subject import Subject
-from tests.fixtures import create_subject_node
+from tests.fixtures import create_subject_node, create_leader_node
 
 
 class TestNodeServer(unittest.IsolatedAsyncioTestCase):
@@ -40,7 +40,13 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
     async def send_message(self, port: int, message: str) -> None:
         async with aiohttp.ClientSession() as client:
-            await client.post(f'http://localhost:{port}/send_message', data={'message', message})
+            response = await client.post(
+                f'http://localhost:{port}/send_message',
+                json={'message': message},
+                headers={'Content-Type': 'application/json'},
+            )
+            response.raise_for_status()
+
 
     async def test_sending_heartbeat(self) -> None:
         node = create_subject_node()
@@ -99,7 +105,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(2)
 
     async def test_send_and_get_messages(self) -> None:
-        node = create_subject_node()
+        node = create_leader_node()
         server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout=timedelta(seconds=2)))
 
         await node.request_vote()
@@ -107,6 +113,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.5)
 
         await self.send_message(8080, 'hi')
+        await asyncio.sleep(0.5)
         messages = await self.get_messages(8080)
 
         self.assertTupleEqual(messages, ('hi',))
