@@ -4,7 +4,7 @@ import asyncio
 import unittest
 from contextlib import suppress
 from datetime import timedelta
-from itertools import cycle
+from itertools import cycle, repeat
 from typing import Type, Callable
 
 from quorum.cluster.cluster import NoLeaderInCluster, TooManyLeaders
@@ -106,8 +106,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await get_running_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
-                max_timeout=timedelta(seconds=0.2),
-                randomization=(cycle((0.1,)))
+                max_timeout=timedelta(seconds=1),
+                randomization=(cycle((0.01,)))
             ),
         )
 
@@ -135,10 +135,15 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         subject_2 = create_subject_node()
         leader = create_leader_node()
         heartbeat = timedelta(seconds=0.03)
-        candidacy_timeout = timedelta(seconds=0.05)
+        candidacy_timeout = timedelta(seconds=0.06)
+        candidacy_timeout_min = timedelta(seconds=0.04)
         await get_running_cluster(
             nodes={leader, subject_1, subject_2},
-            election_timeout=ElectionTimeout(max_timeout=candidacy_timeout, min_timeout=candidacy_timeout),
+            election_timeout=ElectionTimeout(
+                max_timeout=candidacy_timeout,
+                min_timeout=candidacy_timeout_min,
+                randomization=cycle([0, 1]),
+            ),
             heartbeat_period=timedelta(seconds=0.05),
         )
         await asyncio.sleep(0.5 * heartbeat.total_seconds())
