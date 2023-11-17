@@ -111,3 +111,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             response.raise_for_status()
             response_data = await response.json()
         return tuple(response_data['messages'])
+
+    async def test_multiple_nodes(self) -> None:
+        self.fail()
