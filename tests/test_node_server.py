@@ -1,11 +1,12 @@
 import asyncio
-import unittest
 from datetime import timedelta
+from typing import Iterable, Callable, Awaitable, Any
+import unittest
 
 import aiohttp
 
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
-from quorum.node.node import DownableNode
+from quorum.node.node import DownableNode, INode
 from quorum.node.node_http_server import NodeServer
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
@@ -27,8 +28,17 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         server_task.cancel()
         await asyncio.sleep(1)
 
-    async def start_node_server(self, node: DownableNode, election_timeout: timedelta = timedelta(seconds=0.1)) -> None:
-        server = NodeServer(node, cluster_configuration=self.get_cluster_configuration(election_timeout))
+    async def start_node_server(
+        self,
+        node: DownableNode[str],
+        election_timeout: timedelta = timedelta(seconds=0.1),
+        remote_nodes: Iterable[INode[str]] = tuple(),
+    ) -> None:
+        server = NodeServer(
+            node=node,
+            cluster_configuration=self.get_cluster_configuration(election_timeout),
+            remote_nodes=remote_nodes
+        )
         server_task = asyncio.create_task(server.run(8080))
         await asyncio.sleep(0.5)
         self.addAsyncCleanup(self._kill_server, server_task)
@@ -112,5 +122,21 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             response_data = await response.json()
         return tuple(response_data['messages'])
 
-    async def test_multiple_nodes(self) -> None:
-        self.fail()
+    async def remains_true(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
+        for _ in range(34):
+            await assertion(*args)
+            await asyncio.sleep(0.03)
+
+    async def test_server_registers_remote_nodes_with_local_node(self) -> None:
+        subject = create_subject_node()
+        leader = create_leader_node()
+        election_timeout = timedelta(seconds=0.1)
+
+        await self.start_node_server(node=leader, election_timeout=election_timeout, remote_nodes={subject})
+
+        asyncio.create_task(subject.run(self.get_cluster_configuration(election_timeout)))
+
+        async def assert_subject_still_subject():
+            self.assertIsInstance(subject.role, Subject)
+
+        await self.remains_true(assert_subject_still_subject)

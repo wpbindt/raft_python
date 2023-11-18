@@ -1,4 +1,5 @@
 import asyncio
+from typing import Iterable
 
 from starlette.applications import Starlette
 from starlette.requests import Request
@@ -6,17 +7,20 @@ from starlette.responses import JSONResponse
 from uvicorn import Server, Config
 
 from quorum.cluster.configuration import ClusterConfiguration
-from quorum.node.node import Node
+from quorum.node.node import Node, INode
 
 
 class NodeServer:
     def __init__(
         self,
         node: Node[str],
+        remote_nodes: Iterable[INode[str]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         self._node = node
         self._cluster_configuration = cluster_configuration
+        for remote_node in remote_nodes:
+            self._node.register_node(remote_node)
 
     async def run(self, port: int) -> None:
         asyncio.create_task(self._node.run(self._cluster_configuration))
