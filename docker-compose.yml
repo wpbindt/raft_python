@@ -11,28 +11,28 @@ services:
     << : *node
     ports:
       - "8081:8080"
-    entrypoint: "python3 run_server.py http://node2:8082 http://node3:8083 http://node4:8084 http://node5:8085 8081"
+    entrypoint: "python3 run_server.py http://node2:8082 http://node3:8083 http://node4:8084 http://node5:8085 8080"
 
   node2:
     <<: *node
     ports:
       - "8082:8080"
-    entrypoint: "python3 run_server.py http://node1:8081 http://node3:8083 http://node4:8084 http://node5:8085 8082"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node3:8083 http://node4:8084 http://node5:8085 8080"
 
   node3:
     <<: *node
     ports:
       - "8083:8080"
-    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node4:8084 http://node5:8085 8083"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node4:8084 http://node5:8085 8080"
 
   node4:
     <<: *node
     ports:
       - "8084:8080"
-    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node5:8085 8084"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node5:8085 8080"
 
   node5:
     <<: *node
     ports:
       - "8085:8080"
-    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node4:8084 8085"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node4:8084 8080"
