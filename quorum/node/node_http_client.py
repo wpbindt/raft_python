@@ -25,7 +25,12 @@ class NodeHttpClient(INode[str]):
         return HeartbeatResponse()
 
     async def send_message(self, message: MessageType) -> None:
-        pass
+        async with aiohttp.ClientSession() as client:
+            await client.post(
+                f'{self._url}/send_message',
+                json={'message': message},
+                headers={'Content-Type': 'application/json'},
+            )
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         pass

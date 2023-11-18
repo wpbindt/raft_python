@@ -51,13 +51,8 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             await client.post(f'http://localhost:{port}/heartbeat')
 
     async def send_message(self, port: int, message: str) -> None:
-        async with aiohttp.ClientSession() as client:
-            response = await client.post(
-                f'http://localhost:{port}/send_message',
-                json={'message': message},
-                headers={'Content-Type': 'application/json'},
-            )
-            response.raise_for_status()
+        client = NodeHttpClient(f'http://localhost:{port}')
+        await client.send_message(message)
 
     async def request_vote(self, port: int) -> bool:
         client = NodeHttpClient(f'http://localhost:{port}')
