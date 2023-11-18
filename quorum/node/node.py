@@ -16,10 +16,6 @@ from quorum.node.role.role import Role
 
 class INode(ABC, Generic[MessageType]):
     @abstractmethod
-    def register_node(self, node: INode) -> None:
-        pass
-
-    @abstractmethod
     async def request_vote(self) -> bool:
         pass
 

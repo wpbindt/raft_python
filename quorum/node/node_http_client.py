@@ -8,9 +8,6 @@ class NodeHttpClient(INode[str]):
     def __init__(self, url: str) -> None:
         self._url = url
 
-    def register_node(self, node: INode) -> None:
-        raise NotImplementedError
-
     async def request_vote(self) -> bool:
         async with aiohttp.ClientSession() as client:
             response = await client.post(f'{self._url}/request_vote')
