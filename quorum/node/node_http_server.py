@@ -4,6 +4,7 @@ from typing import Iterable
 from starlette.applications import Starlette
 from starlette.requests import Request
 from starlette.responses import JSONResponse
+from starlette.routing import Route
 from uvicorn import Server, Config
 
 from quorum.cluster.configuration import ClusterConfiguration
@@ -24,26 +25,13 @@ class NodeServer:
 
     async def run(self, port: int) -> None:
         asyncio.create_task(self._node.run(self._cluster_configuration))
-        app = Starlette()
-        app.add_route(
-            path='/heartbeat',
-            route=self.heartbeat,
-            methods=['POST']
-        )
-        app.add_route(
-            path='/request_vote',
-            route=self.request_vote,
-            methods=['POST']
-        )
-        app.add_route(
-            path='/send_message',
-            route=self.send_message,
-            methods=['POST']
-        )
-        app.add_route(
-            path='/get_messages',
-            route=self.get_messages,
-            methods=['GET']
+        app = Starlette(
+            routes=[
+                Route(path='/heartbeat', endpoint=self.heartbeat, methods=['POST']),
+                Route(path='/request_vote', endpoint=self.request_vote, methods=['POST']),
+                Route(path='/send_message', endpoint=self.send_message, methods=['POST']),
+                Route(path='/get_messages', endpoint=self.get_messages, methods=['GET']),
+            ]
         )
         server = Server(config=Config(host='0.0.0.0', port=port, app=app))
 
