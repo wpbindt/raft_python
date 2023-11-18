@@ -7,6 +7,7 @@ import aiohttp
 
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
 from quorum.node.node import DownableNode, INode
+from quorum.node.node_http_client import NodeHttpClient
 from quorum.node.node_http_server import NodeServer
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
@@ -44,6 +45,8 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         self.addAsyncCleanup(self._kill_server, server_task)
 
     async def send_heartbeat(self, port: int) -> None:
+        client = NodeHttpClient(f'http://localhost:{port}')
+        await client.heartbeat()
         async with aiohttp.ClientSession() as client:
             await client.post(f'http://localhost:{port}/heartbeat')
 
