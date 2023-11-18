@@ -1,0 +1,47 @@
+version: '3'
+
+services:
+  node1:
+    build: .
+    image: quorum
+    ports:
+      - "8081:8080"
+    entrypoint: "python3 run_server.py http://node2:8082 http://node3:8083 http://node4:8084 http://node5:8085 8081"
+    volumes:
+      - .:/srv
+
+  node2:
+    build: .
+    image: quorum
+    ports:
+      - "8082:8080"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node3:8083 http://node4:8084 http://node5:8085 8082"
+    volumes:
+      - .:/srv
+
+  node3:
+    build: .
+    image: quorum
+    ports:
+      - "8083:8080"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node4:8084 http://node5:8085 8083"
+    volumes:
+      - .:/srv
+
+  node4:
+    build: .
+    image: quorum
+    ports:
+      - "8084:8080"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node5:8085 8084"
+    volumes:
+      - .:/srv
+
+  node5:
+    build: .
+    image: quorum
+    ports:
+      - "8085:8080"
+    entrypoint: "python3 run_server.py http://node1:8081 http://node2:8082 http://node3:8083 http://node4:8084 8085"
+    volumes:
+      - .:/srv

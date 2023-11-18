@@ -34,4 +34,4 @@ class NodeHttpClient(INode[str]):
         return tuple(response_data['messages'])
 
     def get_id(self) -> int:
-        pass
+        return hash(self._url)
