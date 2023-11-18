@@ -1,6 +1,5 @@
 import aiohttp
 
-from quorum.cluster.message_type import MessageType
 from quorum.node.node import INode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
@@ -15,7 +14,6 @@ class NodeHttpClient(INode[str]):
     async def request_vote(self) -> bool:
         async with aiohttp.ClientSession() as client:
             response = await client.post(f'{self._url}/request_vote')
-            response.raise_for_status()
             response_data = await response.json()
         return response_data['vote']
 
@@ -24,7 +22,7 @@ class NodeHttpClient(INode[str]):
             await client.post(f'{self._url}/heartbeat')
         return HeartbeatResponse()
 
-    async def send_message(self, message: MessageType) -> None:
+    async def send_message(self, message: str) -> None:
         async with aiohttp.ClientSession() as client:
             await client.post(
                 f'{self._url}/send_message',
@@ -32,8 +30,11 @@ class NodeHttpClient(INode[str]):
                 headers={'Content-Type': 'application/json'},
             )
 
-    async def get_messages(self) -> tuple[MessageType, ...]:
-        pass
+    async def get_messages(self) -> tuple[str, ...]:
+        async with aiohttp.ClientSession() as client:
+            response = await client.get(f'{self._url}/get_messages')
+            response_data = await response.json()
+        return tuple(response_data['messages'])
 
     def get_id(self) -> int:
         pass

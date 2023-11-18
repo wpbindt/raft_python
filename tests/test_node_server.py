@@ -3,8 +3,6 @@ from datetime import timedelta
 from typing import Iterable, Callable, Awaitable, Any
 import unittest
 
-import aiohttp
-
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
 from quorum.node.node import DownableNode, INode
 from quorum.node.node_http_client import NodeHttpClient
@@ -47,8 +45,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
     async def send_heartbeat(self, port: int) -> None:
         client = NodeHttpClient(f'http://localhost:{port}')
         await client.heartbeat()
-        async with aiohttp.ClientSession() as client:
-            await client.post(f'http://localhost:{port}/heartbeat')
 
     async def send_message(self, port: int, message: str) -> None:
         client = NodeHttpClient(f'http://localhost:{port}')
@@ -59,11 +55,8 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         return await client.request_vote()
 
     async def get_messages(self, port: int) -> tuple[str, ...]:
-        async with aiohttp.ClientSession() as client:
-            response = await client.get(f'http://localhost:{port}/get_messages')
-            response.raise_for_status()
-            response_data = await response.json()
-        return tuple(response_data['messages'])
+        client = NodeHttpClient(f'http://localhost:{port}')
+        return await client.get_messages()
 
     async def remains_true(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
         for _ in range(34):
