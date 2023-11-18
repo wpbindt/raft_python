@@ -60,11 +60,8 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             response.raise_for_status()
 
     async def request_vote(self, port: int) -> bool:
-        async with aiohttp.ClientSession() as client:
-            response = await client.post(f'http://localhost:{port}/request_vote')
-            response.raise_for_status()
-            response_data = await response.json()
-        return response_data['vote']
+        client = NodeHttpClient(f'http://localhost:{port}')
+        return await client.request_vote()
 
     async def get_messages(self, port: int) -> tuple[str, ...]:
         async with aiohttp.ClientSession() as client:

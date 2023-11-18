@@ -13,7 +13,11 @@ class NodeHttpClient(INode[str]):
         raise NotImplementedError
 
     async def request_vote(self) -> bool:
-        pass
+        async with aiohttp.ClientSession() as client:
+            response = await client.post(f'{self._url}/request_vote')
+            response.raise_for_status()
+            response_data = await response.json()
+        return response_data['vote']
 
     async def heartbeat(self) -> HeartbeatResponse:
         async with aiohttp.ClientSession() as client:
