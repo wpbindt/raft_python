@@ -43,12 +43,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         await asyncio.sleep(0.5)
         self.addAsyncCleanup(self._kill_server, server_task)
 
-    async def test_running_the_app_runs_the_node(self) -> None:
-        node = create_subject_node()
-        await self.start_node_server(node)
-
-        self.assertIsInstance(node.role, (Candidate, Leader))
-
     async def send_heartbeat(self, port: int) -> None:
         async with aiohttp.ClientSession() as client:
             await client.post(f'http://localhost:{port}/heartbeat')
@@ -61,6 +55,31 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
                 headers={'Content-Type': 'application/json'},
             )
             response.raise_for_status()
+
+    async def request_vote(self, port: int) -> bool:
+        async with aiohttp.ClientSession() as client:
+            response = await client.post(f'http://localhost:{port}/request_vote')
+            response.raise_for_status()
+            response_data = await response.json()
+        return response_data['vote']
+
+    async def get_messages(self, port: int) -> tuple[str, ...]:
+        async with aiohttp.ClientSession() as client:
+            response = await client.get(f'http://localhost:{port}/get_messages')
+            response.raise_for_status()
+            response_data = await response.json()
+        return tuple(response_data['messages'])
+
+    async def remains_true(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
+        for _ in range(34):
+            await assertion(*args)
+            await asyncio.sleep(0.03)
+
+    async def test_running_the_app_runs_the_node(self) -> None:
+        node = create_subject_node()
+        await self.start_node_server(node)
+
+        self.assertIsInstance(node.role, (Candidate, Leader))
 
     async def test_sending_heartbeat(self) -> None:
         node = create_subject_node()
@@ -78,13 +97,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(node.role, Subject)
 
         heartbeat_task.cancel()
-
-    async def request_vote(self, port: int) -> bool:
-        async with aiohttp.ClientSession() as client:
-            response = await client.post(f'http://localhost:{port}/request_vote')
-            response.raise_for_status()
-            response_data = await response.json()
-        return response_data['vote']
 
     async def test_request_vote(self) -> None:
         node = create_subject_node()
@@ -114,18 +126,6 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
         messages = await self.get_messages(8080)
 
         self.assertTupleEqual(messages, ('hi',))
-
-    async def get_messages(self, port: int) -> tuple[str, ...]:
-        async with aiohttp.ClientSession() as client:
-            response = await client.get(f'http://localhost:{port}/get_messages')
-            response.raise_for_status()
-            response_data = await response.json()
-        return tuple(response_data['messages'])
-
-    async def remains_true(self, assertion: Callable[..., Awaitable[None]], *args: Any) -> None:
-        for _ in range(34):
-            await assertion(*args)
-            await asyncio.sleep(0.03)
 
     async def test_server_registers_remote_nodes_with_local_node(self) -> None:
         subject = create_subject_node()
