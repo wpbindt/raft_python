@@ -20,16 +20,16 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         self.assertIsInstance(node.role, role_type)
 
     def assert_is_candidate(self, node: DownableNode[str]) -> None:
-        self._assert_role_has_type(node, Candidate[str])
+        self._assert_role_has_type(node, Candidate)
 
     def assert_is_subject(self, node: DownableNode[str]) -> None:
-        self._assert_role_has_type(node, Subject[str])
+        self._assert_role_has_type(node, Subject)
 
     def assert_is_not_subject(self, node: DownableNode[str]) -> None:
-        self._assert_role_has_type(node, (Candidate[str], Leader[str]))
+        self._assert_role_has_type(node, (Candidate, Leader))
 
     def assert_is_leader(self, node: DownableNode[str]) -> None:
-        self._assert_role_has_type(node, Leader[str])
+        self._assert_role_has_type(node, Leader)
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(100):
