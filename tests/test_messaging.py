@@ -121,7 +121,7 @@ class TestMessaging(unittest.IsolatedAsyncioTestCase):
             await assertion(*args)
             await asyncio.sleep(0.03)
 
-    async def wait_for_leader(self, cluster) -> None:
+    async def wait_for_leader(self, cluster: Cluster[str]) -> None:
         for _ in range(50):
             await asyncio.sleep(0.1)
             leader = cluster.take_me_to_a_leader()

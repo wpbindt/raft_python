@@ -18,20 +18,20 @@ from tests.fixtures import get_running_cluster, create_downable_subject_node, cr
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
-    def _assert_role_has_type(self, node: DownableNode, role_type: Type[Role] | tuple[Type[Role], ...]) -> None:
+    def _assert_role_has_type(self, node: DownableNode[str], role_type: Type[Role[str]] | tuple[Type[Role[str]], ...]) -> None:
         self.assertIsInstance(node.role, role_type)
 
-    def assert_is_candidate(self, node: DownableNode) -> None:
-        self._assert_role_has_type(node, Candidate)
+    def assert_is_candidate(self, node: DownableNode[str]) -> None:
+        self._assert_role_has_type(node, Candidate[str])
 
-    def assert_is_subject(self, node: DownableNode) -> None:
-        self._assert_role_has_type(node, Subject)
+    def assert_is_subject(self, node: DownableNode[str]) -> None:
+        self._assert_role_has_type(node, Subject[str])
 
-    def assert_is_not_subject(self, node: DownableNode) -> None:
-        self._assert_role_has_type(node, (Candidate, Leader))
+    def assert_is_not_subject(self, node: DownableNode[str]) -> None:
+        self._assert_role_has_type(node, (Candidate[str], Leader[str]))
 
-    def assert_is_leader(self, node: DownableNode) -> None:
-        self._assert_role_has_type(node, Leader)
+    def assert_is_leader(self, node: DownableNode[str]) -> None:
+        self._assert_role_has_type(node, Leader[str])
 
     async def remains_true(self, assertion: Callable[[], None]) -> None:
         for _ in range(100):

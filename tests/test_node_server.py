@@ -23,7 +23,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
             heartbeat_period=timedelta(seconds=0.01),
         )
 
-    async def _kill_server(self, server_task: asyncio.Task) -> None:
+    async def _kill_server(self, server_task: asyncio.Task[Any]) -> None:
         server_task.cancel()
         await asyncio.sleep(1)
 
@@ -124,7 +124,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
         asyncio.create_task(subject.run(self.get_cluster_configuration(election_timeout)))
 
-        async def assert_subject_still_subject():
+        async def assert_subject_still_subject() -> None:
             self.assertIsInstance(subject.role, Subject)
 
         await self.remains_true(assert_subject_still_subject)
