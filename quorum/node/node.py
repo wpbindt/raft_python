@@ -44,15 +44,15 @@ class INode(ABC, Generic[MessageType]):
         return hash(self.get_id())
 
 
-class Node(INode, Generic[MessageType]):
+class Node(INode[MessageType], Generic[MessageType]):
     def __init__(
         self,
-        initial_role: Callable[[Node], Role],
+        initial_role: Callable[[Node[MessageType]], Role[MessageType]],
     ) -> None:
         self._running_task_lock = asyncio.Lock()
         self._id = random.randint(0, 365)
         self._role = initial_role(self)
-        self._other_nodes: set[INode] = set()
+        self._other_nodes: set[INode[MessageType]] = set()
         self._messages: tuple[MessageType, ...] = tuple()
         self._message_box = MessageBox(
             distribution_strategy=self._role.get_distribution_strategy(),
@@ -61,16 +61,16 @@ class Node(INode, Generic[MessageType]):
     def get_id(self) -> int:
         return self._id
 
-    def register_node(self, node: INode) -> None:
+    def register_node(self, node: INode[MessageType]) -> None:
         if node != self:
             self._log(f'registering {node}')
             self._other_nodes.add(node)
 
     @property
-    def role(self) -> Role:
+    def role(self) -> Role[MessageType]:
         return self._role
 
-    def change_role(self, new_role: Role) -> None:
+    def change_role(self, new_role: Role[MessageType]) -> None:
         self._log(f'changing role from {self._role} to {new_role}')
         self._role.stop_running()
         self._role = new_role
