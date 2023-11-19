@@ -14,7 +14,7 @@ from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
-from tests.fixtures import get_running_cluster, create_subject_node, create_leader_node, create_candidate_node
+from tests.fixtures import get_running_cluster, create_downable_subject_node, create_downable_leader_node, create_downable_candidate_node
 
 
 class TestCluster(unittest.IsolatedAsyncioTestCase):
@@ -52,28 +52,28 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_one_node_one_leader(self) -> None:
-        the_node = create_leader_node()
+        the_node = create_downable_leader_node()
         cluster = await get_running_cluster({the_node})
 
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_two_nodes_one_leader(self) -> None:
-        leader = create_leader_node()
-        follower = create_subject_node()
+        leader = create_downable_leader_node()
+        follower = create_downable_subject_node()
         cluster = await get_running_cluster({leader, follower})
 
         assert cluster.take_me_to_a_leader() == leader
 
     async def test_two_nodes_multiple_leaders(self) -> None:
-        leader = create_leader_node()
-        follower = create_leader_node()
+        leader = create_downable_leader_node()
+        follower = create_downable_leader_node()
         cluster = await get_running_cluster({leader, follower})
 
         with self.assertRaises(TooManyLeaders):
             assert cluster.take_me_to_a_leader()
 
     async def test_down_then_back_up_means_leader_back(self) -> None:
-        the_node = create_leader_node()
+        the_node = create_downable_leader_node()
         cluster = await get_running_cluster({the_node})
 
         await the_node.take_down()
@@ -82,7 +82,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == the_node
 
     async def test_resurrected_subjects_are_subjects(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
         cluster = await get_running_cluster({the_node})
 
         await the_node.take_down()
@@ -91,7 +91,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         assert cluster.take_me_to_a_leader() == NoLeaderInCluster()
 
     async def test_non_leader_nodes_announce_candidacy_after_election_timeout_passes(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
         await get_running_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(timedelta(seconds=0.02)),
@@ -102,7 +102,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_candidacy_is_announced_in_random_way(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
         await get_running_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -116,7 +116,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_not_subject(the_node)
 
     async def test_candidacy_is_not_announced_before_min_timeout(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
         await get_running_cluster(
             nodes={the_node},
             election_timeout=ElectionTimeout(
@@ -131,9 +131,9 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(the_node)
 
     async def test_down_leaders_do_not_prevent_elections(self) -> None:
-        subject_1 = create_subject_node()
-        subject_2 = create_subject_node()
-        leader = create_leader_node()
+        subject_1 = create_downable_subject_node()
+        subject_2 = create_downable_subject_node()
+        leader = create_downable_leader_node()
         heartbeat = timedelta(seconds=0.03)
         candidacy_timeout = timedelta(seconds=0.06)
         candidacy_timeout_min = timedelta(seconds=0.04)
@@ -156,7 +156,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.eventually(assertion)
 
     async def test_that_leaderless_cluster_eventually_has_leader(self) -> None:
-        subject = create_subject_node()
+        subject = create_downable_subject_node()
         election_timeout = timedelta(seconds=0.01)
         await get_running_cluster(
             nodes={subject},
@@ -167,8 +167,8 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_leaderless_cluster_eventually_has_exactly_one_leader(self) -> None:
         subjects = {
-            create_subject_node(),
-            create_subject_node(),
+            create_downable_subject_node(),
+            create_downable_subject_node(),
         }
         cluster = await get_running_cluster(
             nodes=subjects,
@@ -183,7 +183,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.remains_true(lambda: assertion())
 
     async def test_that_a_leaderless_cluster_will_never_have_more_than_one_leader(self) -> None:
-        nodes = {create_subject_node() for _ in range(3)}
+        nodes = {create_downable_subject_node() for _ in range(3)}
         await get_running_cluster(
             nodes=nodes,
             election_timeout=ElectionTimeout(
@@ -201,13 +201,13 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
 
     async def test_that_with_majority_down_no_leader_is_elected(self) -> None:
         live_nodes = {
-            create_subject_node(),
-            create_subject_node(),
+            create_downable_subject_node(),
+            create_downable_subject_node(),
         }
         dead_nodes = {
-            create_subject_node(),
-            create_subject_node(),
-            create_leader_node(),
+            create_downable_subject_node(),
+            create_downable_subject_node(),
+            create_downable_leader_node(),
         }
         await get_running_cluster(
             nodes=dead_nodes | live_nodes,
@@ -223,7 +223,7 @@ class TestCluster(unittest.IsolatedAsyncioTestCase):
         await self.remains_true(assertion)
 
     async def test_that_all_candidates_eventually_stabilizes_to_one_leader(self) -> None:
-        nodes = {create_candidate_node() for _ in range(3)}
+        nodes = {create_downable_candidate_node() for _ in range(3)}
         await get_running_cluster(
             nodes=nodes,
             election_timeout=ElectionTimeout(

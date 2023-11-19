@@ -108,7 +108,7 @@ class Node(INode, Generic[MessageType]):
 
     def _log(self, message: str) -> None:
         full_message = f'{self}: {message}'
-        getLogger().info(full_message)
+        getLogger().debug(full_message)
 
     async def send_message(self, message: MessageType) -> None:
         await self._message_box.append(message)

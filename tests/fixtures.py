@@ -39,13 +39,25 @@ async def get_running_cluster(
     return cluster
 
 
-def create_subject_node() -> DownableNode:
-    return DownableNode(Node(lambda node: Subject(node)))
+def create_downable_subject_node() -> DownableNode:
+    return DownableNode(create_subject_node())
 
 
-def create_leader_node() -> DownableNode:
-    return DownableNode(Node(lambda node: Leader(node)))
+def create_downable_leader_node() -> DownableNode:
+    return DownableNode(create_leader_node())
 
 
-def create_candidate_node() -> DownableNode:
-    return DownableNode(Node(lambda node: Candidate(node)))
+def create_downable_candidate_node() -> DownableNode:
+    return DownableNode(create_candidate_node())
+
+
+def create_subject_node() -> Node:
+    return Node(lambda node: Subject(node))
+
+
+def create_leader_node() -> Node:
+    return Node(lambda node: Leader(node))
+
+
+def create_candidate_node() -> Node:
+    return Node(lambda node: Candidate(node))

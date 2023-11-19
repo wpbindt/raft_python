@@ -12,7 +12,7 @@ from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role
 from quorum.node.role.subject import Subject
-from tests.fixtures import create_subject_node, create_leader_node
+from tests.fixtures import create_downable_subject_node, create_downable_leader_node
 
 
 class TestNode(unittest.IsolatedAsyncioTestCase):
@@ -45,7 +45,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         assertion()
 
     async def test_requesting_vote_twice_yields_nay(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
 
         await the_node.request_vote()
         vote2 = await the_node.request_vote()
@@ -53,7 +53,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(vote2)
 
     async def test_new_heartbeat_means_vote_again(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
 
         await the_node.request_vote()
         await the_node.heartbeat()
@@ -62,7 +62,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(vote2)
 
     async def test_subject_who_feels_no_heartbeat_becomes_leader(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
 
         asyncio.create_task(the_node.run(
             ClusterConfiguration(
@@ -74,7 +74,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_leader(the_node))
 
     async def test_subject_who_feels_one_heartbeat_becomes_leader(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
 
         asyncio.create_task(the_node.run(
             ClusterConfiguration(
@@ -88,7 +88,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_leader(the_node))
 
     async def test_subject_who_feels_many_heartbeats_stays_subject(self) -> None:
-        the_node = create_subject_node()
+        the_node = create_downable_subject_node()
 
         async def many_heartbeats() -> None:
             for _ in range(40):
@@ -106,7 +106,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         await self.remains_true(lambda: self.assert_is_subject(the_node))
 
     async def test_leader_who_feels_heartbeat_steps_down(self) -> None:
-        the_node = create_leader_node()
+        the_node = create_downable_leader_node()
 
         asyncio.create_task(the_node.run(
             ClusterConfiguration(
@@ -120,7 +120,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         await self.eventually(lambda: self.assert_is_subject(the_node))
 
     async def test_leader_who_votes_steps_down(self) -> None:
-        the_node = create_leader_node()
+        the_node = create_downable_leader_node()
 
         asyncio.create_task(the_node.run(
             ClusterConfiguration(
@@ -134,7 +134,7 @@ class TestNode(unittest.IsolatedAsyncioTestCase):
         self.assert_is_subject(the_node)
 
     async def test_leaders_stay_leader_when_no_heartbeat(self) -> None:
-        the_node = create_leader_node()
+        the_node = create_downable_leader_node()
 
         asyncio.create_task(the_node.run(
             ClusterConfiguration(

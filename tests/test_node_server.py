@@ -4,7 +4,7 @@ from typing import Iterable, Callable, Awaitable, Any
 import unittest
 
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
-from quorum.node.node import DownableNode, INode
+from quorum.node.node import DownableNode, INode, Node
 from quorum.node.node_http_client import NodeHttpClient
 from quorum.node.node_http_server import NodeServer
 from quorum.node.role.candidate import Candidate
@@ -29,7 +29,7 @@ class TestNodeServer(unittest.IsolatedAsyncioTestCase):
 
     async def start_node_server(
         self,
-        node: DownableNode[str],
+        node: Node[str],
         election_timeout: timedelta = timedelta(seconds=0.1),
         remote_nodes: Iterable[INode[str]] = tuple(),
     ) -> None:
