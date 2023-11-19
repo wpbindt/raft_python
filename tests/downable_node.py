@@ -5,7 +5,8 @@ from typing import Generic
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
-from quorum.node.node import INode, Node
+from quorum.node.node import Node
+from quorum.node.node_interface import INode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
 

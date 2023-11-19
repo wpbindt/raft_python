@@ -4,7 +4,8 @@ from typing import Iterable, Callable, Awaitable, Any
 import unittest
 
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
-from quorum.node.node import INode, Node
+from quorum.node.node import Node
+from quorum.node.node_interface import INode
 from tests.downable_node import DownableNode
 from quorum.node.node_http_client import NodeHttpClient
 from quorum.node.node_http_server import NodeServer

@@ -1,6 +1,6 @@
 import aiohttp
 
-from quorum.node.node import INode
+from quorum.node.node_interface import INode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 

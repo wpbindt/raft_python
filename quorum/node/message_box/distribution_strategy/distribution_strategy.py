@@ -8,7 +8,7 @@ from typing import Generic
 from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import INode
+    from quorum.node.node_interface import INode
 
 
 class DistributionStrategy(ABC, Generic[MessageType]):

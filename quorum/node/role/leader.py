@@ -7,7 +7,8 @@ from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node, INode
+    from quorum.node.node import Node
+    from quorum.node.node_interface import INode
     from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse

@@ -8,7 +8,8 @@ from starlette.routing import Route
 from uvicorn import Server, Config
 
 from quorum.cluster.configuration import ClusterConfiguration
-from quorum.node.node import Node, INode
+from quorum.node.node import Node
+from quorum.node.node_interface import INode
 
 
 class NodeServer:

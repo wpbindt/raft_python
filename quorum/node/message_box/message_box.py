@@ -7,7 +7,8 @@ from quorum.cluster.message_type import MessageType
 from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy, DistributionFailed
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node import Node, INode
+    from quorum.node.node import Node
+    from quorum.node.node_interface import INode
 
 
 class MessageBox(Generic[MessageType]):
