@@ -75,9 +75,6 @@ class Candidate(Role[MessageType], typing.Generic[MessageType]):
         else:
             ballot_box.vote(await node.request_vote())
 
-    def get_node(self) -> Node[MessageType]:
-        return self._node
-
     def heartbeat(self) -> HeartbeatResponse:
         return HeartbeatResponse()
 

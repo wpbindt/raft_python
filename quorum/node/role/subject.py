@@ -31,9 +31,6 @@ class Subject(Role[MessageType], typing.Generic[MessageType]):
             self._node.change_role(Candidate(self._node))
         self._beaten = False
 
-    def get_node(self) -> Node[MessageType]:
-        return self._node
-
     def heartbeat(self) -> HeartbeatResponse:
         self._beaten = True
         self._voted = False

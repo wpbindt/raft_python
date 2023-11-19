@@ -1,22 +1,20 @@
 from __future__ import annotations
+
 import typing
 from abc import ABC, abstractmethod
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
 from quorum.node.role.heartbeat_response import HeartbeatResponse
+
 if typing.TYPE_CHECKING:
-    from quorum.node.node import INode, Node
+    from quorum.node.node import INode
     from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy
 
 
 class Role(ABC, typing.Generic[MessageType]):
     @abstractmethod
     async def run(self, other_nodes: set[INode[MessageType]], cluster_configuration: ClusterConfiguration) -> None:
-        pass
-
-    @abstractmethod
-    def get_node(self) -> Node[MessageType]:  # TODO remove this
         pass
 
     @abstractmethod

@@ -31,9 +31,6 @@ class Leader(Role[MessageType], typing.Generic[MessageType]):
             return
         await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
 
-    def get_node(self) -> Node[MessageType]:
-        return self._node
-
     def heartbeat(self) -> HeartbeatResponse:
         from quorum.node.role.subject import Subject
         self._node.change_role(Subject(self._node))
