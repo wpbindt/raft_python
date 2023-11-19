@@ -6,7 +6,7 @@ from typing import Awaitable, Callable, Any
 
 from quorum.cluster.cluster import Cluster, NoLeaderInCluster
 from quorum.cluster.configuration import ElectionTimeout
-from quorum.node.node import DownableNode
+from tests.downable_node import DownableNode
 from tests.fixtures import get_running_cluster, create_downable_leader_node, get_frozen_cluster, create_downable_candidate_node, \
     create_downable_subject_node
 

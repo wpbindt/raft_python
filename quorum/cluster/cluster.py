@@ -5,7 +5,8 @@ from typing import Generic
 
 from quorum.cluster.message_type import MessageType
 from quorum.node.role.leader import Leader
-from quorum.node.node import Node, DownableNode
+from quorum.node.node import Node
+from tests.downable_node import DownableNode
 from quorum.cluster.configuration import ClusterConfiguration
 
 

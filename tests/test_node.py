@@ -7,7 +7,7 @@ from datetime import timedelta
 from typing import Type, Callable
 
 from quorum.cluster.configuration import ElectionTimeout, ClusterConfiguration
-from quorum.node.node import DownableNode
+from tests.downable_node import DownableNode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.leader import Leader
 from quorum.node.role.role import Role

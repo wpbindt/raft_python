@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import random
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from logging import getLogger
 from typing import Callable, Generic, Any
 
@@ -32,16 +31,16 @@ class INode(ABC, Generic[MessageType]):
         pass
 
     @abstractmethod
-    def get_id(self) -> int:
+    def _get_id(self) -> int:
         pass
 
     def __eq__(self, other: Any) -> bool:
         if not isinstance(other, INode):
             return False
-        return self.get_id() == other.get_id()
+        return self._get_id() == other._get_id()
 
     def __hash__(self) -> int:
-        return hash(self.get_id())
+        return hash(self._get_id())
 
 
 class Node(INode[MessageType], Generic[MessageType]):
@@ -58,7 +57,7 @@ class Node(INode[MessageType], Generic[MessageType]):
             distribution_strategy=self._role.get_distribution_strategy(),
         )
 
-    def get_id(self) -> int:
+    def _get_id(self) -> int:
         return self._id
 
     def register_node(self, node: INode[MessageType]) -> None:
@@ -115,58 +114,3 @@ class Node(INode[MessageType], Generic[MessageType]):
 
     async def get_messages(self) -> tuple[MessageType, ...]:
         return await self._message_box.get_messages()
-
-
-@dataclass(frozen=True)
-class NodeIsDown:
-    pass
-
-
-class DownableNode(INode[MessageType], Generic[MessageType]):
-    def __init__(self, node: Node[MessageType]) -> None:
-        self._actual_node = node
-        self._down = False
-
-    def get_id(self) -> int:
-        return self._actual_node.get_id()
-
-    def register_node(self, node: INode[MessageType]) -> None:
-        self._actual_node.register_node(node)
-
-    async def request_vote(self) -> bool:
-        if self._down:
-            return False
-        return await self._actual_node.request_vote()
-
-    async def heartbeat(self) -> HeartbeatResponse:
-        if self._down:
-            return HeartbeatResponse()
-        return await self._actual_node.heartbeat()
-
-    async def send_message(self, message: MessageType) -> None:
-        if self._down:
-            await asyncio.sleep(1)
-            return
-        return await self._actual_node.send_message(message)
-
-    async def get_messages(self) -> tuple[MessageType, ...]:
-        if self._down:
-            return tuple()
-        return await self._actual_node.get_messages()
-
-    @property
-    def role(self) -> Role[MessageType] | NodeIsDown:
-        if self._down:
-            return NodeIsDown()
-        return self._actual_node.role
-
-    async def take_down(self) -> None:
-        self._down = True
-        await self._actual_node.pause()
-
-    async def bring_back_up(self) -> None:
-        self._down = False
-        await self._actual_node.unpause()
-
-    async def run(self, cluster_configuration: ClusterConfiguration) -> None:
-        await self._actual_node.run(cluster_configuration)

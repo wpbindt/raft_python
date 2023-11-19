@@ -32,5 +32,5 @@ class NodeHttpClient(INode[str]):
             response_data = await response.json()
         return tuple(response_data['messages'])
 
-    def get_id(self) -> int:
+    def _get_id(self) -> int:
         return hash(self._url)
