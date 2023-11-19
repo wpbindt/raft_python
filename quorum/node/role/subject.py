@@ -3,6 +3,7 @@ from __future__ import annotations
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
+from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node, INode
@@ -11,14 +12,18 @@ from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-class Subject(Role):
-    def __init__(self, node: Node) -> None:
+class Subject(Role[MessageType], typing.Generic[MessageType]):
+    def __init__(self, node: Node[MessageType]) -> None:
         self._node = node
         self._beaten = False
         self._stopped = False
         self._voted = False
 
-    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(
+        self,
+        other_nodes: set[INode[MessageType]],
+        cluster_configuration: ClusterConfiguration,
+    ) -> None:
         await cluster_configuration.election_timeout.wait()
         if self._stopped:
             return
@@ -26,7 +31,7 @@ class Subject(Role):
             self._node.change_role(Candidate(self._node))
         self._beaten = False
 
-    def get_node(self) -> Node:
+    def get_node(self) -> Node[MessageType]:
         return self._node
 
     def heartbeat(self) -> HeartbeatResponse:

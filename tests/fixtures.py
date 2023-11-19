@@ -12,7 +12,7 @@ from quorum.node.role.subject import Subject
 
 
 def get_frozen_cluster(
-    nodes: set[DownableNode],
+    nodes: set[DownableNode[str]],
     election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
     heartbeat_period: timedelta = timedelta(seconds=1),
 ) -> Cluster[str]:
@@ -26,7 +26,7 @@ def get_frozen_cluster(
 
 
 async def get_running_cluster(
-    nodes: set[DownableNode],
+    nodes: set[DownableNode[str]],
     election_timeout: ElectionTimeout = ElectionTimeout(timedelta(seconds=1)),
     heartbeat_period: timedelta = timedelta(seconds=1),
 ) -> Cluster[str]:
@@ -39,25 +39,25 @@ async def get_running_cluster(
     return cluster
 
 
-def create_downable_subject_node() -> DownableNode:
+def create_downable_subject_node() -> DownableNode[str]:
     return DownableNode(create_subject_node())
 
 
-def create_downable_leader_node() -> DownableNode:
+def create_downable_leader_node() -> DownableNode[str]:
     return DownableNode(create_leader_node())
 
 
-def create_downable_candidate_node() -> DownableNode:
+def create_downable_candidate_node() -> DownableNode[str]:
     return DownableNode(create_candidate_node())
 
 
-def create_subject_node() -> Node:
+def create_subject_node() -> Node[str]:
     return Node(lambda node: Subject(node))
 
 
-def create_leader_node() -> Node:
+def create_leader_node() -> Node[str]:
     return Node(lambda node: Leader(node))
 
 
-def create_candidate_node() -> Node:
+def create_candidate_node() -> Node[str]:
     return Node(lambda node: Candidate(node))

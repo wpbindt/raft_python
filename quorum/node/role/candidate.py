@@ -4,6 +4,7 @@ import asyncio
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
+from quorum.cluster.message_type import MessageType
 from quorum.node.role.leader import Leader
 
 if typing.TYPE_CHECKING:
@@ -40,11 +41,15 @@ class BallotBox:
         return len(ayes) >= self._majority
 
 
-class Candidate(Role):
-    def __init__(self, node: Node) -> None:
+class Candidate(Role[MessageType], typing.Generic[MessageType]):
+    def __init__(self, node: Node[MessageType]) -> None:
         self._node = node
 
-    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(
+        self,
+        other_nodes: set[INode[MessageType]],
+        cluster_configuration: ClusterConfiguration,
+    ) -> None:
         ballot_box = BallotBox(electorate=len(other_nodes | {self._node}))
         for node in other_nodes | {self._node}:
             asyncio.create_task(self._collect_vote_from(
@@ -62,7 +67,7 @@ class Candidate(Role):
 
     async def _collect_vote_from(
         self,
-        node: INode,
+        node: INode[MessageType],
         ballot_box: BallotBox,
     ) -> None:
         if node == self._node:
@@ -70,7 +75,7 @@ class Candidate(Role):
         else:
             ballot_box.vote(await node.request_vote())
 
-    def get_node(self) -> Node:
+    def get_node(self) -> Node[MessageType]:
         return self._node
 
     def heartbeat(self) -> HeartbeatResponse:

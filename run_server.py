@@ -11,14 +11,14 @@ from quorum.node.node_http_server import NodeServer
 from quorum.node.role.subject import Subject
 
 
-async def main():
+async def main() -> None:
     urls = sys.argv[1:-1]
     port = int(sys.argv[-1])
     remote_clients = [
         NodeHttpClient(url)
         for url in urls
     ]
-    local_node = Node(lambda node: Subject(node))
+    local_node = Node(lambda node: Subject[str](node))
 
     logger = logging.getLogger()
     if len(logger.handlers) == 0:

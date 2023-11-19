@@ -122,7 +122,7 @@ class NodeIsDown:
     pass
 
 
-class DownableNode(INode, Generic[MessageType]):
+class DownableNode(INode[MessageType], Generic[MessageType]):
     def __init__(self, node: Node[MessageType]) -> None:
         self._actual_node = node
         self._down = False
@@ -130,7 +130,7 @@ class DownableNode(INode, Generic[MessageType]):
     def get_id(self) -> int:
         return self._actual_node.get_id()
 
-    def register_node(self, node: INode) -> None:
+    def register_node(self, node: INode[MessageType]) -> None:
         self._actual_node.register_node(node)
 
     async def request_vote(self) -> bool:
@@ -155,7 +155,7 @@ class DownableNode(INode, Generic[MessageType]):
         return await self._actual_node.get_messages()
 
     @property
-    def role(self) -> Role | NodeIsDown:
+    def role(self) -> Role[MessageType] | NodeIsDown:
         if self._down:
             return NodeIsDown()
         return self._actual_node.role

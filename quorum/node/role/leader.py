@@ -4,6 +4,7 @@ import asyncio
 import typing
 
 from quorum.cluster.configuration import ClusterConfiguration
+from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node, INode
@@ -12,12 +13,16 @@ from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-class Leader(Role):
-    def __init__(self, node: Node) -> None:
+class Leader(Role[MessageType], typing.Generic[MessageType]):
+    def __init__(self, node: Node[MessageType]) -> None:
         self._stopped = False
         self._node = node
 
-    async def run(self, other_nodes: set[INode], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(
+        self,
+        other_nodes: set[INode[MessageType]],
+        cluster_configuration: ClusterConfiguration,
+    ) -> None:
         for node in other_nodes:
             if self._stopped:
                 return
@@ -26,7 +31,7 @@ class Leader(Role):
             return
         await asyncio.sleep(cluster_configuration.heartbeat_period.total_seconds())
 
-    def get_node(self) -> Node:
+    def get_node(self) -> Node[MessageType]:
         return self._node
 
     def heartbeat(self) -> HeartbeatResponse:
@@ -45,6 +50,6 @@ class Leader(Role):
     def __str__(self) -> str:
         return 'leader'
 
-    def get_distribution_strategy(self) -> DistributionStrategy:
+    def get_distribution_strategy(self) -> DistributionStrategy[MessageType]:
         from quorum.node.message_box.distribution_strategy.leader_distribution import LeaderDistribution
         return LeaderDistribution()

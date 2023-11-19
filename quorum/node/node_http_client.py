@@ -12,7 +12,7 @@ class NodeHttpClient(INode[str]):
     async def request_vote(self) -> bool:
         async with self._client_session.post(f'{self._url}/request_vote') as response:
             response_data = await response.json()
-        return response_data['vote']
+        return bool(response_data['vote'])
 
     async def heartbeat(self) -> HeartbeatResponse:
         async with self._client_session.post(f'{self._url}/heartbeat') as response:

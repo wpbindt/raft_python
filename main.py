@@ -2,7 +2,7 @@ import asyncio
 import random
 import sys
 from datetime import timedelta
-from typing import NoReturn
+from typing import NoReturn, Any
 
 from quorum.cluster.cluster import Cluster
 from quorum.cluster.configuration import ClusterConfiguration, ElectionTimeout
@@ -11,13 +11,13 @@ from quorum.node.role.leader import Leader
 from quorum.node.role.subject import Subject
 
 
-def print_cluster(cluster: Cluster) -> int:
+def print_cluster(cluster: Cluster[Any]) -> int:
     to_print = str(cluster)
     print(cluster)
     return len(to_print.split('\n'))
 
 
-async def randomly_take_stuff_down(nodes: set[Node]) -> NoReturn:
+async def randomly_take_stuff_down(nodes: set[Node[Any]]) -> NoReturn:
     while True:
         await asyncio.sleep(1 + random.random())
         node = random.choice(list(node for node in nodes if isinstance(node.role, Leader)))
