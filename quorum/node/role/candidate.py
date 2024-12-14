@@ -9,7 +9,7 @@ from quorum.node.role.leader import Leader
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node
-    from quorum.node.node_interface import INode
+    from quorum.node.node_interface import InternalNode
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
@@ -48,7 +48,7 @@ class Candidate(Role[MessageType], typing.Generic[MessageType]):
 
     async def run(
         self,
-        other_nodes: set[INode[MessageType]],
+        other_nodes: set[InternalNode[MessageType]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         ballot_box = BallotBox(electorate=len(other_nodes | {self._node}))
@@ -68,7 +68,7 @@ class Candidate(Role[MessageType], typing.Generic[MessageType]):
 
     async def _collect_vote_from(
         self,
-        node: INode[MessageType],
+        node: InternalNode[MessageType],
         ballot_box: BallotBox,
     ) -> None:
         if node == self._node:

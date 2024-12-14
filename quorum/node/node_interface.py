@@ -5,7 +5,17 @@ from quorum.cluster.message_type import MessageType
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-class INode(ABC, Generic[MessageType]):
+class PublicNode(ABC, Generic[MessageType]):
+    @abstractmethod
+    async def send_message(self, message: MessageType) -> None:
+        pass
+
+    @abstractmethod
+    async def get_messages(self) -> tuple[MessageType, ...]:
+        pass
+
+
+class InternalNode(ABC, Generic[MessageType]):
     @abstractmethod
     async def request_vote(self) -> bool:
         pass
@@ -27,7 +37,7 @@ class INode(ABC, Generic[MessageType]):
         pass
 
     def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, INode):
+        if not isinstance(other, InternalNode):
             return False
         return self._get_id() == other._get_id()
 

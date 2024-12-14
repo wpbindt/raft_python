@@ -1,10 +1,10 @@
 import aiohttp
 
-from quorum.node.node_interface import INode
+from quorum.node.node_interface import InternalNode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 
-class NodeHttpClient(INode[str]):
+class NodeHttpClient(InternalNode[str]):
     def __init__(self, url: str) -> None:
         self._url = url
         self._client_session = aiohttp.ClientSession()

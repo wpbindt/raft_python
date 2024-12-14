@@ -8,12 +8,12 @@ from typing import Callable, Generic
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
 from quorum.node.message_box.message_box import MessageBox
-from quorum.node.node_interface import INode
+from quorum.node.node_interface import InternalNode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
 
 
-class Node(INode[MessageType], Generic[MessageType]):
+class Node(InternalNode[MessageType], Generic[MessageType]):
     def __init__(
         self,
         initial_role: Callable[[Node[MessageType]], Role[MessageType]],
@@ -21,7 +21,7 @@ class Node(INode[MessageType], Generic[MessageType]):
         self._running_task_lock = asyncio.Lock()
         self._id = random.randint(0, 365)
         self._role = initial_role(self)
-        self._other_nodes: set[INode[MessageType]] = set()
+        self._other_nodes: set[InternalNode[MessageType]] = set()
         self._messages: tuple[MessageType, ...] = tuple()
         self._message_box = MessageBox(
             distribution_strategy=self._role.get_distribution_strategy(),
@@ -30,7 +30,7 @@ class Node(INode[MessageType], Generic[MessageType]):
     def _get_id(self) -> int:
         return self._id
 
-    def register_node(self, node: INode[MessageType]) -> None:
+    def register_node(self, node: InternalNode[MessageType]) -> None:
         if node != self:
             self._log(f'registering {node}')
             self._other_nodes.add(node)

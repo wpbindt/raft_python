@@ -7,7 +7,7 @@ from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node
-    from quorum.node.node_interface import INode
+    from quorum.node.node_interface import InternalNode
 from quorum.node.role.candidate import Candidate
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
@@ -22,7 +22,7 @@ class Subject(Role[MessageType], typing.Generic[MessageType]):
 
     async def run(
         self,
-        other_nodes: set[INode[MessageType]],
+        other_nodes: set[InternalNode[MessageType]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         await cluster_configuration.election_timeout.wait()

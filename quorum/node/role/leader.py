@@ -8,7 +8,7 @@ from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
     from quorum.node.node import Node
-    from quorum.node.node_interface import INode
+    from quorum.node.node_interface import InternalNode
     from quorum.node.message_box.distribution_strategy.distribution_strategy import DistributionStrategy
 from quorum.node.role.role import Role
 from quorum.node.role.heartbeat_response import HeartbeatResponse
@@ -21,7 +21,7 @@ class Leader(Role[MessageType], typing.Generic[MessageType]):
 
     async def run(
         self,
-        other_nodes: set[INode[MessageType]],
+        other_nodes: set[InternalNode[MessageType]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         for node in other_nodes:

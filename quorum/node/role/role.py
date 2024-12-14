@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
-from quorum.node.node_interface import INode
+from quorum.node.node_interface import InternalNode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 
 if typing.TYPE_CHECKING:
@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
 
 class Role(ABC, typing.Generic[MessageType]):
     @abstractmethod
-    async def run(self, other_nodes: set[INode[MessageType]], cluster_configuration: ClusterConfiguration) -> None:
+    async def run(self, other_nodes: set[InternalNode[MessageType]], cluster_configuration: ClusterConfiguration) -> None:
         pass
 
     @abstractmethod

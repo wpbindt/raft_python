@@ -6,12 +6,12 @@ from typing import Generic
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.cluster.message_type import MessageType
 from quorum.node.node import Node
-from quorum.node.node_interface import INode
+from quorum.node.node_interface import InternalNode
 from quorum.node.role.heartbeat_response import HeartbeatResponse
 from quorum.node.role.role import Role
 
 
-class DownableNode(INode[MessageType], Generic[MessageType]):
+class DownableNode(InternalNode[MessageType], Generic[MessageType]):
     def __init__(self, node: Node[MessageType]) -> None:
         self._actual_node = node
         self._down = False
@@ -19,7 +19,7 @@ class DownableNode(INode[MessageType], Generic[MessageType]):
     def _get_id(self) -> int:
         return self._actual_node._get_id()
 
-    def register_node(self, node: INode[MessageType]) -> None:
+    def register_node(self, node: InternalNode[MessageType]) -> None:
         self._actual_node.register_node(node)
 
     async def request_vote(self) -> bool:

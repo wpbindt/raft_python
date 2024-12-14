@@ -9,14 +9,14 @@ from uvicorn import Server, Config
 
 from quorum.cluster.configuration import ClusterConfiguration
 from quorum.node.node import Node
-from quorum.node.node_interface import INode
+from quorum.node.node_interface import InternalNode
 
 
 class NodeServer:
     def __init__(
         self,
         node: Node[str],
-        remote_nodes: Iterable[INode[str]],
+        remote_nodes: Iterable[InternalNode[str]],
         cluster_configuration: ClusterConfiguration,
     ) -> None:
         self._node = node

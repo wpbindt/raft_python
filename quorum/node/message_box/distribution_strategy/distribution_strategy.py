@@ -8,12 +8,12 @@ from typing import Generic
 from quorum.cluster.message_type import MessageType
 
 if typing.TYPE_CHECKING:
-    from quorum.node.node_interface import INode
+    from quorum.node.node_interface import InternalNode
 
 
 class DistributionStrategy(ABC, Generic[MessageType]):
     @abstractmethod
-    async def distribute(self, message: MessageType, other_nodes: set[INode[MessageType]]) -> DistributionSuccessful | DistributionFailed:
+    async def distribute(self, message: MessageType, other_nodes: set[InternalNode[MessageType]]) -> DistributionSuccessful | DistributionFailed:
         pass
 
 
